@@ -35,21 +35,21 @@ def app():
     with st.sidebar:
         st.header("Dynamics Controls")
         
-        # PARAMETERS DICTIONARY (Collected here to pass explicitly)
+        # PARAMETERS DICTIONARY
         params = {}
         
         params['STEPS'] = st.slider("Simulation Speed", 1, 20, 5)
-        params['GRID'] = 300 # Fixed as requested
+        params['GRID'] = 300 
         
         st.subheader("Species A (The Producer)")
         params['growth_a'] = st.slider("A Growth Rate (Alpha)", 0.0, 1.0, 0.1, step=0.01)
         params['prod_x'] = st.slider("Production of Food X", 0.0, 1.0, 0.5, step=0.01)
         
         st.subheader("Species B (The Consumer)")
-        # Explicit step=0.01 ensures we can hit exactly 0.0
-        params['growth_b'] = st.slider("B Efficiency (Delta)", 0.0, 2.0, 0.8, step=0.01, 
-                                     help="If 0, B cannot reproduce.")
-        params['death_b'] = st.slider("B Starvation Rate (Gamma)", 0.0, 0.1, 0.02, step=0.001)
+        # FIX: Added format="%.2f" and ensuring clear zero handling
+        params['growth_b'] = st.slider("B Efficiency (Delta)", 0.0, 2.0, 0.8, step=0.01, format="%.2f",
+                                     help="Higher Efficiency = Faster Growth & Lower Food Consumption.")
+        params['death_b'] = st.slider("B Starvation Rate (Gamma)", 0.0, 0.1, 0.02, step=0.001, format="%.3f")
         
         st.subheader("Chemical Warfare")
         params['prod_y'] = st.slider("Production of Poison Y", 0.0, 1.0, 0.5, step=0.01)
@@ -114,8 +114,13 @@ def app():
         Y += D_DIFFUSION * laplacian(Y)
         
         # 3. Decay/Consumption
-        # B consumes X to grow
-        consumption_X = mask_B * X * 0.2
+        # FIX: Link Consumption to Efficiency
+        # High Efficiency (growth_b) -> Low Consumption factor
+        # Low Efficiency -> High Consumption factor
+        # Formula: Base Consumption / (Efficiency + 0.2)
+        consumption_factor = 0.2 / (p['growth_b'] + 0.2)
+        
+        consumption_X = mask_B * X * consumption_factor
         X -= (DECAY_RATE * X) + consumption_X
         Y -= DECAY_RATE * Y
         
@@ -157,7 +162,8 @@ def app():
             grid[birth_A] = 1
         
         # Growth of B (Consumer)
-        if p['growth_b'] > 0:
+        # FIX: Hard check for near-zero values to prevent float overshoot
+        if p['growth_b'] > 1e-6:
             # Probability = Efficiency * Concentration of X
             prob_growth_B = p['growth_b'] * X
             birth_B = mask_empty & (neighbor_grid == 2) & (rand_birth < prob_growth_B)
