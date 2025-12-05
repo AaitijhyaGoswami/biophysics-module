@@ -40,26 +40,30 @@ def app():
 
     st.sidebar.subheader("Species parameters")
     p_spread_A = st.sidebar.slider("Base spread A (prob)", 0.0, 1.0, 0.20)
-    p_spread_B = st.sidebar.slider("Base spread B (prob)", 0.0, 1.0, 0.18)
+    p_spread_B = st.sidebar.slider("Base spread B (prob)", 0.0, 1.0, 0.25) # Increased from 0.18
     death_A = st.sidebar.slider("Death prob A", 0.0, 0.1, 0.002)
-    death_B = st.sidebar.slider("Death prob B", 0.0, 0.1, 0.002)
+    death_B = st.sidebar.slider("Death prob B", 0.0, 0.1, 0.001) # Decreased from 0.002
 
     st.sidebar.subheader("Resource / Metabolite physics")
+    # Added Feed Rate for sustained oscillations
+    feed_N = st.sidebar.slider("Nutrient feed rate (Chemostat)", 0.0, 0.2, 0.04) 
     D_m = st.sidebar.slider("Metabolite diffusion D_m", 0.0, 1.0, 0.6)
     decay_m = st.sidebar.slider("Metabolite decay", 0.0, 1.0, 0.01)
-    prod_A = st.sidebar.slider("A produces M_A (per A per dt)", 0.0, 1.0, 0.12)
+    
+    # Tuned defaults for survival
+    prod_A = st.sidebar.slider("A produces M_A (per A per dt)", 0.0, 1.0, 0.40) # Increased from 0.12
     prod_B = st.sidebar.slider("B produces M_B (per B per dt)", 0.0, 1.0, 0.08)
     cons_N_by_A = st.sidebar.slider("A consumption of N (per A per dt)", 0.0, 1.0, 0.06)
     cons_MA_by_B = st.sidebar.slider("B consumption of M_A (scales growth)", 0.0, 1.0, 0.12)
 
     st.sidebar.subheader("Interaction strengths")
     K_N = st.sidebar.slider("Half-sat nutrient K_N (A growth)", 0.01, 5.0, 0.5)
-    K_MA = st.sidebar.slider("Half-sat M_A K_MA (B growth)", 0.01, 5.0, 0.4)
+    K_MA = st.sidebar.slider("Half-sat M_A K_MA (B growth)", 0.01, 5.0, 0.1) # Decreased from 0.4 for better B growth
     inhib_MB_on_A = st.sidebar.slider("Inhibition of A by M_B (0=no, 1=strong)", 0.0, 2.0, 1.2)
 
     st.sidebar.subheader("Initial densities")
     init_A = st.sidebar.slider("Init A fraction", 0.0, 0.5, 0.015)
-    init_B = st.sidebar.slider("Init B fraction", 0.0, 0.5, 0.015)
+    init_B = st.sidebar.slider("Init B fraction", 0.0, 0.5, 0.05) # Increased from 0.015
     init_empty = 1.0 - (init_A + init_B)
     st.sidebar.caption(f"Init empty (rest) ≈ {init_empty:.3f}")
 
@@ -131,7 +135,9 @@ def app():
         # Reaction-Diffusion Update
         ma = ma + dt * (D_m * lap_ma + prodA_field - uptake_MA_by_B - decay_m * ma)
         mb = mb + dt * (D_m * lap_mb + prodB_field - decay_m * mb)
-        N = N - dt * consN_field
+        
+        # Nutrient Update with Feed (Chemostat logic)
+        N = N + dt * (feed_N * (1.0 - N) - consN_field)
 
         # Clamping
         ma = np.clip(ma, 0, None)
