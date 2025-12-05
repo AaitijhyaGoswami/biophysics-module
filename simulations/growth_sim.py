@@ -45,7 +45,6 @@ def app():
         )
         return lap
 
-    # Helper to convert RGB float [0,1,0] to Hex String "#00FF00" for Altair
     def rgb_to_hex(rgb):
         return '#{:02x}{:02x}{:02x}'.format(int(rgb[0]*255), int(rgb[1]*255), int(rgb[2]*255))
 
@@ -91,13 +90,10 @@ def app():
         st.session_state.bg_mask = mask
         st.session_state.bg_time = 0
         
-        # HISTORY TRACKING
+        # HISTORY
         st.session_state.bg_hist_time = []      
         st.session_state.bg_pop_history = []    
         st.session_state.bg_nut_history = [] 
-        
-        # Track individual colonies: Dictionary {Colony_ID: [List of biomass]}
-        # We initialize lists for all possible 12 colonies just in case
         st.session_state.bg_colony_history = {i: [] for i in range(1, 13)}
         
         st.session_state.bg_initialized = True
@@ -110,30 +106,31 @@ def app():
         st.rerun()
 
     # -----------------------------
-    # 4. MAIN SIMULATION LOOP
+    # 4. LAYOUT SETUP
     # -----------------------------
-    
     col1, col2, col3 = st.columns(3)
     placeholder_colony = col1.empty()
     placeholder_nutrient = col2.empty()
     placeholder_biomass = col3.empty()
     
     st.markdown("---")
-    
-    # Layout for the two graphs
     col_graph_global, col_graph_local = st.columns(2)
     chart_global_placeholder = col_graph_global.empty()
     chart_local_placeholder = col_graph_local.empty()
 
+    # Simulation Controls
     run_sim = st.toggle("Run Simulation", value=False)
-    
+
+    # -----------------------------
+    # 5. PHYSICS CALCULATION
+    # -----------------------------
+    # We execute this block ONLY if the simulation is running
     if run_sim:
         bacteria = st.session_state.bg_bacteria
         food = st.session_state.bg_food
         seed_ids = st.session_state.bg_seed_ids
         mask = st.session_state.bg_mask
         
-        # Physics steps
         for _ in range(STEPS_PER_FRAME):
             # Diffusion
             food += FOOD_DIFF * laplacian_interior(food)
@@ -149,7 +146,7 @@ def app():
             food -= consumption
             food = np.clip(food, 0.0, 1.0)
             
-            # Neighbor Calc
+            # Growth
             neighbor_sum = (
                 np.roll(bacteria, 1, axis=0) + np.roll(bacteria, -1, axis=0) +
                 np.roll(bacteria, 1, axis=1) + np.roll(bacteria, -1, axis=1)
@@ -160,7 +157,6 @@ def app():
             noise = np.random.random(bacteria.shape)
             noisy_factor = np.clip(neighbor - NOISE_STRENGTH * (noise - 0.5) + tip_driver, 0.0, 1.0)
             
-            # Growth
             local_driver = SELF_GROWTH + (1 - SELF_GROWTH) * noisy_factor
             growth = GROWTH_RATE * bacteria * (1 - bacteria) * local_driver * food
             bacteria += growth
@@ -175,59 +171,43 @@ def app():
                 )
                 seed_ids[(neighbors_mask & (seed_ids==0) & (bacteria>0))] = i
 
-        # --- DATA RECORDING ---
+        # Update History
         st.session_state.bg_time += STEPS_PER_FRAME
         st.session_state.bg_hist_time.append(st.session_state.bg_time)
         st.session_state.bg_pop_history.append(np.sum(bacteria))
         st.session_state.bg_nut_history.append(np.sum(food))
         
-        # Calculate Per-Colony Biomass
         for i in range(1, NUM_SEEDS+1):
-            # Fast numpy boolean indexing to sum biomass for this ID
             colony_mass = np.sum(bacteria[seed_ids == i])
             st.session_state.bg_colony_history[i].append(colony_mass)
 
-        # Save state
+        # Save State
         st.session_state.bg_bacteria = bacteria
         st.session_state.bg_food = food
         st.session_state.bg_seed_ids = seed_ids
-        
-        st.rerun()
 
     # -----------------------------
-    # 5. VISUALIZATION (IMAGES)
+    # 6. VISUALIZATION (Happens EVERY frame)
     # -----------------------------
+    # Retrieve latest state
     bacteria = st.session_state.bg_bacteria
     seed_ids = st.session_state.bg_seed_ids
     mask = st.session_state.bg_mask
     food = st.session_state.bg_food
 
-    # DEFINE COLORS (RGB)
-    # Index 0 is black (background). Indices 1-12 are colonies.
+    # Colors
     base_colors = np.array([
-        [0,0,0],       # 0: None
-        [1,0,0],       # 1: Red
-        [0,1,0],       # 2: Green
-        [0,0,1],       # 3: Blue
-        [1,1,0],       # 4: Yellow
-        [1,0,1],       # 5: Magenta
-        [0,1,1],       # 6: Cyan
-        [0.5,0.5,0],   # 7: Olive
-        [0.5,0,0.5],   # 8: Purple
-        [0,0.5,0.5],   # 9: Teal
-        [1,0.5,0],     # 10: Orange
-        [0.5,1,0],     # 11: Lime
-        [1,0,0.5]      # 12: Pink
+        [0,0,0], [1,0,0], [0,1,0], [0,0,1], [1,1,0], [1,0,1], [0,1,1], 
+        [0.5,0.5,0], [0.5,0,0.5], [0,0.5,0.5], [1,0.5,0], [0.5,1,0], [1,0,0.5]
     ])
 
-    # Construct Colony Image
+    # 1. Colony Image
     medium = np.zeros((GRID_SIZE, GRID_SIZE, 3), dtype=float)
     for i in range(1, NUM_SEEDS+1):
         mask_i = (seed_ids == i)
         for c in range(3):
             medium[..., c] += mask_i * bacteria * base_colors[i, c]
 
-    # Halo/Glow Effect
     neighbor_sum_vis = (
         np.roll(bacteria, 1, axis=0) + np.roll(bacteria, -1, axis=0) +
         np.roll(bacteria, 1, axis=1) + np.roll(bacteria, -1, axis=1)
@@ -236,31 +216,29 @@ def app():
     halo = gaussian_filter(branch_tips.astype(float), sigma=1.2)
     if halo.max() > 0: halo /= halo.max()
     medium += (halo[..., None] * 0.6) 
-
     medium = np.clip(medium, 0, 1)
     medium[~mask] = 0.0
 
-    # Nutrient Image
+    # 2. Nutrient & Biomass Images
     nutr_img = np.zeros((GRID_SIZE, GRID_SIZE, 3))
     nutr_img[..., 1] = food  
     nutr_img[~mask] = 0.0
 
-    # Biomass Image
     bio_img = np.zeros((GRID_SIZE, GRID_SIZE, 3))
     bio_img[..., 0] = bacteria 
     bio_img[..., 2] = bacteria * 0.5 
     bio_img[~mask] = 0.0
     
+    # Update Image Placeholders
     placeholder_colony.image(medium, caption=f"Colony Morphology (t={st.session_state.bg_time})", clamp=True, use_column_width=True)
     placeholder_nutrient.image(nutr_img, caption="Nutrient Concentration", clamp=True, use_column_width=True)
     placeholder_biomass.image(bio_img, caption="Biomass Density", clamp=True, use_column_width=True)
 
-    # -----------------------------
-    # 6. GRAPHS (ALTAIR)
-    # -----------------------------
+    # 3. Update Graphs (Only if we have history)
     if len(st.session_state.bg_pop_history) > 0:
+        # We perform graph updates every frame, but you can use `if st.session_state.bg_time % X == 0` to optimize
         
-        # --- GRAPH 1: GLOBAL DYNAMICS ---
+        # Global Graph
         df_global = pd.DataFrame({
             "Time (mins)": st.session_state.bg_hist_time,
             "Total Biomass": st.session_state.bg_pop_history,
@@ -277,29 +255,31 @@ def app():
         
         chart_global_placeholder.altair_chart(chart_global, use_container_width=True)
 
-        # --- GRAPH 2: PER COLONY DYNAMICS ---
-        # 1. Build DataFrame
+        # Local Colony Graph
         data_colony = {"Time (mins)": st.session_state.bg_hist_time}
         for i in range(1, NUM_SEEDS+1):
-            # Ensure list lengths match (simulation safety check)
-            hist = st.session_state.bg_colony_history[i]
-            # Use strict slicing to ensure row count matches time steps
-            data_colony[f"Colony {i}"] = hist[:len(st.session_state.bg_hist_time)]
+            data_colony[f"Colony {i}"] = st.session_state.bg_colony_history[i][:len(st.session_state.bg_hist_time)]
 
         df_colony = pd.DataFrame(data_colony)
         df_colony_melt = df_colony.melt('Time (mins)', var_name='Colony', value_name='Biomass')
 
-        # 2. Map Colors (Hex codes for Altair)
-        # base_colors[i] corresponds to Colony i
         color_domain = [f"Colony {i}" for i in range(1, NUM_SEEDS+1)]
         color_range = [rgb_to_hex(base_colors[i]) for i in range(1, NUM_SEEDS+1)]
 
         chart_local = alt.Chart(df_colony_melt).mark_line().encode(
             x=alt.X('Time (mins)', title='Time (minutes)'),
             y=alt.Y('Biomass', title='Biomass'),
-            # The Magic: Map the Colony Name to the exact Hex Color used in the image
             color=alt.Color('Colony', scale=alt.Scale(domain=color_domain, range=color_range)),
             tooltip=['Time (mins)', 'Colony', 'Biomass']
         ).properties(title="Growth per Colony").interactive()
 
         chart_local_placeholder.altair_chart(chart_local, use_container_width=True)
+
+    # -----------------------------
+    # 7. ANIMATION LOOP TRIGGER
+    # -----------------------------
+    # CRITICAL: This must be the LAST line. 
+    # If running, we rerun the script. Since we updated the placeholders ABOVE, 
+    # the screen will look updated before the script restarts.
+    if run_sim:
+        st.rerun()
