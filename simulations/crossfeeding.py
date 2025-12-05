@@ -25,10 +25,9 @@ def app():
     st.title("Syntrophic Cross-Feeding & Oscillations")
     st.markdown("""
     **The Mechanism:**
-    1.  [Image of bacterial cross feeding diagram]
-    2.  **Species A (Red)** eats Nutrient N $\\to$ secretes Metabolite X.
-    3.  **Species B (Green)** eats Metabolite X $\\to$ secretes Toxin Y.
-    4.  **Toxin Y** inhibits Species A.
+    1.  **Species A (Red)** eats Nutrient N $\\to$ secretes Metabolite X.
+    2.  **Species B (Green)** eats Metabolite X $\\to$ secretes Toxin Y.
+    3.  **Toxin Y** inhibits Species A.
     
     **Result:** A 'Red' bloom creates food for 'Green'. 'Green' blooms and poisons 'Red'. 'Red' dies, 'Green' starves. The cycle repeats.
     """)
@@ -83,17 +82,20 @@ def app():
         num_blobs = 15
         for _ in range(num_blobs):
             rx, ry = np.random.randint(0, GRID_SIZE, 2)
-            # Create a blob
+            # Create a blob mask
             y, x = np.ogrid[-10:10, -10:10]
             mask = x*x + y*y <= 25
             
-            # Place A and B near each other
+            # Correct Coordinate calculation for Torus (Periodic)
+            # FIXED: Removed [:,None] to ensure 1D arrays for np.ix_
             region_x = (np.arange(20) + rx - 10) % GRID_SIZE
-            region_y = (np.arange(20)[:,None] + ry - 10) % GRID_SIZE
+            region_y = (np.arange(20) + ry - 10) % GRID_SIZE
             
             # 50/50 mix in blobs
             blob_grid = np.random.choice([0, 1, 2], (20, 20), p=[0.2, 0.4, 0.4])
-            grid[np.ix_(region_x, region_y[0])] = np.where(mask, blob_grid, 0)
+            
+            # Use np.ix_ to handle the rectangular region selection with wrapping
+            grid[np.ix_(region_x, region_y)] = np.where(mask, blob_grid, 0)
 
         # Fields: N (Base), X (Food for B), Y (Toxin for A)
         field_n = np.ones((GRID_SIZE, GRID_SIZE)) * nutrient_supply
