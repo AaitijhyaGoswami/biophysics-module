@@ -30,7 +30,7 @@ except ImportError:
 
 try:
     from simulations import mega_plate
-    modules["Mega Plate Evolution"] = mega_plate
+    modules["MEGA Plate Evolution"] = mega_plate
 except ImportError:
     pass
 
