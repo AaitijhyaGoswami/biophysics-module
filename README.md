@@ -32,15 +32,15 @@ The project serves as a foundation for beginners in computational biophysics, sc
 ## Tools & Libraries
 - Python 3.10+
 - NumPy
-- Matplotlib
-- SciPy (for diffusion and numerical methods)
-- Optional: Jupyter Notebook for experimentation
+- Matplotlib (for static run locally)
+- SciPy
+- Streamlit
 
 ---
 
 ## Learning Outcomes
 By the end of the project, contributors will gain:
-- Understanding of microbial growth kinetics  
+- Understanding of various models of microbial growth kinetics 
 - Exposure to numerical simulation methods  
 - Experience with scientific visualization  
 - Foundations in computational biophysics and quantitative biology  
