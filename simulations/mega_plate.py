@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
+import altair as alt
 
 def app():
     st.title("The MEGA Plate Experiment")
@@ -8,15 +9,13 @@ def app():
     **Simulation Details:**
     * **Model:** Spatial evolution of bacteria across antibiotic gradients.
     * **Mechanism:** Stochastic mutation and selection.
-    * **Zones:** Bacteria must mutate to higher resistance levels (Cyan → Lime → Red) to survive in inner rings.
+    * **Setup:** Bacteria start in the center (drug-free) and evolve outward into increasing antibiotic concentrations.
     """)
 
     # -----------------------------
-    # 1. PARAMETERS (Preserving Constants)
+    # 1. PARAMETERS
     # -----------------------------
     st.sidebar.subheader("Evolution Parameters")
-    
-    # Defaults match your script exactly
     MUTATION_RATE = st.sidebar.slider("Mutation Rate", 0.0, 0.1, 0.01, format="%.3f")
     REGROW_PROB = st.sidebar.slider("Growth Prob", 0.0, 1.0, 0.2)
     
@@ -25,9 +24,7 @@ def app():
     CENTER = SIZE // 2
     RADIUS = 45
     MAX_RES_LEVEL = 3
-    
-    # Speed control
-    STEPS_PER_FRAME = st.sidebar.slider("Speed (Iterations/Frame)", 1, 10, 1)
+    STEPS_PER_FRAME = st.sidebar.slider("Speed (Iterations/Frame)", 1, 10, 2)
 
     # -----------------------------
     # 2. INITIALIZATION (Session State)
@@ -36,36 +33,20 @@ def app():
         st.session_state.mp_initialized = False
 
     def reset_simulation():
-        # A. Build Antibiotic Map (Exact Logic)
+        # A. Build Antibiotic Map
+        # 0 = No Antibiotic (Center), 1 = Low (Middle), 2 = High (Outer)
         ab_map = np.ones((SIZE, SIZE)) * 99
         for r in range(SIZE):
             for c in range(SIZE):
                 dist = np.sqrt((r-CENTER)**2 + (c-CENTER)**2)
                 if dist > RADIUS:
-                    ab_map[r,c] = 99 # Wall
+                    ab_map[r,c] = 99 # Petri Dish Wall
                 elif dist < RADIUS/3:
-                    ab_map[r,c] = 0  # No antibiotic (Center? No, logic says < R/3 is 0)
-                    # WAIT: In your script:
-                    # dist < R/3 -> 0
-                    # dist < 2R/3 -> 1
-                    # else -> 2
-                    # Actually, usually MegaPlate has 0 on edges and high in center.
-                    # Your script puts 0 in CENTER (< R/3). 
-                    # So bacteria start in center (0 antibiotic) and move OUT?
-                    # Let's check init: bacteria_grid[CENTER-1:...] = 1
-                    # So bacteria start in center (zone 0). 
-                    # If they move out to Zone 1, they need Level 2 resistance?
-                    # Let's stick to YOUR code's logic exactly.
-                elif dist < RADIUS/3: 
-                    # (This elif is unreachable in your code logic order, 
-                    # but let's follow the chain strictly)
-                    ab_map[r,c] = 0
+                    ab_map[r,c] = 0  # Center: No Antibiotic
                 elif dist < 2*RADIUS/3:
-                     # Since < R/3 is caught above, this handles [R/3, 2R/3]
-                    ab_map[r,c] = 1 
+                    ab_map[r,c] = 1  # Middle: Low Antibiotic
                 else:
-                    # [2R/3, R]
-                    ab_map[r,c] = 2 
+                    ab_map[r,c] = 2  # Outer: High Antibiotic
 
         # B. Bacteria Grid
         bac_grid = np.zeros((SIZE, SIZE), dtype=int)
@@ -80,7 +61,7 @@ def app():
         # History
         st.session_state.mp_hist_time = []
         st.session_state.mp_hist_total = []
-        st.session_state.mp_hist_res = [] # List of [n1, n2, n3]
+        st.session_state.mp_hist_res = []
         
         st.session_state.mp_initialized = True
 
@@ -98,8 +79,29 @@ def app():
     
     with col_vis:
         st.write("### Plate View")
+        
+        # --- CUSTOM HTML LEGEND ---
+        legend_html = """
+        <style>
+            .legend-container { font-family: sans-serif; font-size: 12px; margin-bottom: 10px; }
+            .legend-item { display: inline-flex; align-items: center; margin-right: 15px; }
+            .box { width: 12px; height: 12px; border: 1px solid #777; margin-right: 5px; display: inline-block; }
+        </style>
+        <div class="legend-container">
+            <strong>Antibiotic Zones (Background):</strong><br>
+            <div class="legend-item"><span class="box" style="background-color: #333333;"></span>None</div>
+            <div class="legend-item"><span class="box" style="background-color: #666666;"></span>Low</div>
+            <div class="legend-item"><span class="box" style="background-color: #999999;"></span>High</div>
+            <br>
+            <strong>Bacteria (Dots):</strong><br>
+            <div class="legend-item"><span class="box" style="background-color: cyan;"></span>Wildtype (1)</div>
+            <div class="legend-item"><span class="box" style="background-color: #00ff00;"></span>Mutant (2)</div>
+            <div class="legend-item"><span class="box" style="background-color: red;"></span>Superbug (3)</div>
+        </div>
+        """
+        st.markdown(legend_html, unsafe_allow_html=True)
+        
         plate_placeholder = st.empty()
-        st.caption("Cyan: Lvl 1 | Lime: Lvl 2 | Red: Lvl 3")
 
     with col_stats:
         st.write("### Population Dynamics")
@@ -112,59 +114,52 @@ def app():
         bacteria_grid = st.session_state.mp_grid
         antibiotic_map = st.session_state.mp_ab_map
         
-        # Loop for speed
         for _ in range(STEPS_PER_FRAME):
-            # We must use the Python loop logic to preserve your exact stochastic behavior
-            # (Vectorizing this changes the order of operations)
             new_grid = bacteria_grid.copy()
             
+            # Identify living bacteria
             rows, cols = np.where(bacteria_grid > 0)
             if len(rows) > 0:
                 idx = np.arange(len(rows))
-                np.random.shuffle(idx) # Exact Logic: Randomize update order
+                np.random.shuffle(idx) 
                 
                 for i in idx:
                     r, c = rows[i], cols[i]
                     res_level = bacteria_grid[r,c]
 
-                    # Death Check
+                    # 1. Death Check: If resistance < Zone Antibiotic Level, die.
                     if (res_level - 1) < antibiotic_map[r,c]:
                         new_grid[r,c] = 0
                         continue
 
-                    # Reproduction Check
+                    # 2. Reproduction Check
                     neighbors = [(r-1,c), (r+1,c), (r,c-1), (r,c+1)]
-                    np.random.shuffle(neighbors) # Exact Logic: Random neighbor order
+                    np.random.shuffle(neighbors)
                     
                     for nr, nc in neighbors:
                         if 0 <= nr < SIZE and 0 <= nc < SIZE:
-                            # If empty and not a wall
+                            # Target must be empty and within dish walls
                             if bacteria_grid[nr,nc] == 0 and antibiotic_map[nr,nc] != 99:
                                 if np.random.random() < REGROW_PROB:
                                     child = res_level
-                                    # Mutation
+                                    
+                                    # Mutation Event
                                     if np.random.random() < MUTATION_RATE:
                                         child = min(MAX_RES_LEVEL, child + 1)
                                     
-                                    # Survival of child in new zone
+                                    # Survival Check for Child
                                     if (child - 1) >= antibiotic_map[nr,nc]:
                                         new_grid[nr,nc] = child
-                                        # Break after one successful reproduction? 
-                                        # Your original code loops through all neighbors but usually 
-                                        # cellular automata allow one birth per step or fill all?
-                                        # In your code: you iterate neighbors. If you place a child, 
-                                        # you update 'new_grid'. 
-                                        # BUT you don't 'break'. 
-                                        # However, since you check 'bacteria_grid[nr,nc]==0',
-                                        # and 'bacteria_grid' is static during the loop, 
-                                        # a single bacterium CAN reproduce into multiple empty neighbors 
-                                        # in one frame.
-                                        pass 
+                                    
+                                    # Simple cellular automata: 1 birth attempt per neighbor check? 
+                                    # We let it try multiple neighbors but break after success?
+                                    # Standard simple model: just let it run.
+                                    pass 
 
             bacteria_grid[:] = new_grid
             
             # Update Stats
-            st.session_state.mp_time += 0.1 # HOURS_PER_FRAME
+            st.session_state.mp_time += 0.1 
             
             total = np.sum(bacteria_grid > 0)
             c1 = np.sum(bacteria_grid == 1)
@@ -174,69 +169,82 @@ def app():
             st.session_state.mp_hist_time.append(st.session_state.mp_time)
             st.session_state.mp_hist_total.append(total)
             
-            # For fractions, avoid division by zero
             if total > 0:
                 st.session_state.mp_hist_res.append([c1/total, c2/total, c3/total])
             else:
                 st.session_state.mp_hist_res.append([0, 0, 0])
 
-        # Save State
         st.session_state.mp_grid = bacteria_grid
         st.rerun()
 
     # -----------------------------
     # 4. RENDERING
     # -----------------------------
-    # A. Build RGB Image for the Plate
+    # A. Build RGB Image
     bac_grid = st.session_state.mp_grid
     ab_map = st.session_state.mp_ab_map
     
-    # Base: Antibiotic Map (Greyscale)
-    # Map 0->0.2, 1->0.5, 2->0.8, 99->0.0
     img = np.zeros((SIZE, SIZE, 3))
     
-    # Background layers
-    mask_0 = (ab_map == 0)
-    mask_1 = (ab_map == 1)
-    mask_2 = (ab_map == 2)
+    # Background: Antibiotic Concentration
+    mask_0 = (ab_map == 0) # No Antibiotic
+    mask_1 = (ab_map == 1) # Low
+    mask_2 = (ab_map == 2) # High
     
     img[mask_0] = [0.2, 0.2, 0.2] # Dark Grey
     img[mask_1] = [0.4, 0.4, 0.4] # Medium Grey
     img[mask_2] = [0.6, 0.6, 0.6] # Light Grey
     
-    # Overlay Bacteria
-    # 1: Cyan [0, 1, 1]
-    # 2: Lime [0, 1, 0]
-    # 3: Red  [1, 0, 0]
-    
+    # Foreground: Bacteria
     mask_b1 = (bac_grid == 1)
     mask_b2 = (bac_grid == 2)
     mask_b3 = (bac_grid == 3)
     
-    img[mask_b1] = [0, 1, 1]
-    img[mask_b2] = [0, 1, 0]
-    img[mask_b3] = [1, 0, 0]
+    img[mask_b1] = [0, 1, 1]    # Cyan
+    img[mask_b2] = [0, 1, 0]    # Lime
+    img[mask_b3] = [1, 0, 0]    # Red
     
-    # Clip just in case
     img = np.clip(img, 0, 1)
-    
-    # Display Plate
     plate_placeholder.image(img, caption=f"Time: {st.session_state.mp_time:.1f} Hours", use_column_width=True, clamp=True)
     
-    # B. Display Charts
+    # B. Update Altair Charts
     if len(st.session_state.mp_hist_time) > 0:
-        # Total Population
-        chart_total.line_chart({
-            "Total Population": st.session_state.mp_hist_total
-        }, height=200)
         
-        # Fractions
-        # Prepare data for streamlt line chart (requires dict or df)
-        # We need to unzip the list of lists
+        # 1. Total Population
+        df_total = pd.DataFrame({
+            'Time': st.session_state.mp_hist_time,
+            'Population': st.session_state.mp_hist_total
+        })
+        
+        c_total = alt.Chart(df_total).mark_line(color='white').encode(
+            x=alt.X('Time', axis=alt.Axis(title='Time (Hours)')),
+            y=alt.Y('Population', axis=alt.Axis(title='Total Colony Size'))
+        ).properties(height=200)
+        
+        chart_total.altair_chart(c_total, use_container_width=True)
+        
+        # 2. Genotype Frequencies
         hist_res = np.array(st.session_state.mp_hist_res)
         if len(hist_res) > 0:
-            chart_frac.line_chart({
-                "Wildtype": hist_res[:, 0],
-                "Medium Res": hist_res[:, 1],
-                "Superbug": hist_res[:, 2]
-            }, height=200)
+            df_frac = pd.DataFrame({
+                'Time': st.session_state.mp_hist_time,
+                'Wildtype (1)': hist_res[:, 0],
+                'Mutant (2)': hist_res[:, 1],
+                'Superbug (3)': hist_res[:, 2]
+            })
+            
+            df_frac_melt = df_frac.melt('Time', var_name='Genotype', value_name='Frequency')
+            
+            c_frac = alt.Chart(df_frac_melt).mark_line().encode(
+                x=alt.X('Time', axis=alt.Axis(title='Time (Hours)')),
+                y=alt.Y('Frequency', axis=alt.Axis(title='Genotype Frequency', format='%')),
+                color=alt.Color('Genotype', scale=alt.Scale(
+                    domain=['Wildtype (1)', 'Mutant (2)', 'Superbug (3)'],
+                    range=['cyan', '#00ff00', 'red']
+                ))
+            ).properties(height=200)
+            
+            chart_frac.altair_chart(c_frac, use_container_width=True)
+
+if __name__ == "__main__":
+    app()
