@@ -8,7 +8,8 @@ def app():
     st.markdown("""
     **Simulation Details:**
     * **Model:** Spatial non-transitive competition (The "Colicin" Model).
-    * **Dynamics:** * <span style='color:#FF3333'>**Toxic**</span> kills <span style='color:#33FF33'>**Sensitive**</span>.
+    * **Dynamics:** 
+        * <span style='color:#FF3333'>**Toxic**</span> kills <span style='color:#33FF33'>**Sensitive**</span>.
         * <span style='color:#33FF33'>**Sensitive**</span> outgrows <span style='color:#3366FF'>**Resistive**</span>.
         * <span style='color:#3366FF'>**Resistive**</span> outcompetes <span style='color:#FF3333'>**Toxic**</span>.
     * **Outcome:** Species coexist in rotating spiral waves or go extinct depending on mobility.
@@ -263,3 +264,4 @@ def app():
 
 if __name__ == "__main__":
     app()
+
