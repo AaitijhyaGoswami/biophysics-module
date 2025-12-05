@@ -41,8 +41,8 @@ except ImportError:
     pass
 
 try:
-    from simulations import cross_feeding
-    modules["Cross-Feeding (Syntrophy)"] = cross_feeding
+    from simulations import crossfeeding
+    modules["Cross-Feeding (Syntrophy)"] = crossfeeding
 except ImportError:
     pass
 
