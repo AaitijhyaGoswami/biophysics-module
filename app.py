@@ -53,8 +53,8 @@ page = st.sidebar.radio("Select Simulation:", options)
 st.sidebar.markdown("---")
 st.sidebar.caption("Project Team:")
 st.sidebar.info(
-    "**Physics Major**\n*Simulation & Modeling*\n\n"
-    "**Bio Major**\n*Theoretical Framework*"
+    "**Aaitijhya Goswami**\n*Simulation & Modeling*\n\n"
+    "**Ritaja Dutta**\n*Theoretical Framework*"
 )
 
 # -------------------------------------------------------------------------
