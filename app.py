@@ -4,7 +4,7 @@ import streamlit as st
 # PAGE CONFIGURATION
 # -------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Biophysics Suite | IISc",
+    page_title="Biophysics Suite | DFOC",
     page_icon="🧬",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -44,7 +44,7 @@ except ImportError:
 # SIDEBAR NAVIGATION
 # -------------------------------------------------------------------------
 st.sidebar.title("Biophysics Suite")
-st.sidebar.markdown("**IISc Fall of Code '25**")
+st.sidebar.markdown("**Databased Fall of Code '25**")
 
 # Define the navigation options
 options = ["Home"] + list(modules.keys())
@@ -70,7 +70,7 @@ if page == "Home":
     with col1:
         st.markdown("""
         **Welcome.** This interactive dashboard explores the intersection of statistical physics and biology.
-        Developed as part of the **IISc Fall of Code** initiative, these modules visualize how simple mathematical rules give rise to complex biological phenomena.
+        Developed as part of the **Databased Fall of Code** initiative, these modules visualize how simple mathematical rules give rise to complex biological phenomena.
         
         #### The Modules:
         
