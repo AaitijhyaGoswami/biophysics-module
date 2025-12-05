@@ -8,8 +8,8 @@ def app():
     # 0. CONFIGURATION
     # -----------------------
     # Fixed Physics Constants
-    D_DIFFUSION = 0.15   # Slower diffusion preserves local waves
-    DECAY_RATE = 0.05    # Chemicals break down over time
+    D_DIFFUSION = 0.15   
+    DECAY_RATE = 0.05    
     
     def laplacian(field):
         """Discrete Laplace operator for diffusion"""
@@ -24,8 +24,6 @@ def app():
     st.title("Chemically Mediated Lotka-Volterra")
     st.markdown("""
     **The "Poison-Excreta" Cycle:**
-    This model creates predator-prey oscillations not through direct contact, but through chemical fields.
-    
     1.  <span style='color:#FF4444'>**Producer (A)**</span>: Grows freely. **Secretes Food (X)**.
     2.  <span style='color:#44FF44'>**Consumer (B)**</span>: Eats Food (X). **Secretes Poison (Y)**.
     3.  **Dynamics**: B chases A's food trail, while A runs away from B's poison.
@@ -37,20 +35,25 @@ def app():
     with st.sidebar:
         st.header("Dynamics Controls")
         
-        STEPS_PER_FRAME = st.slider("Simulation Speed", 1, 20, 5)
-        GRID_SIZE = 120
+        # PARAMETERS DICTIONARY (Collected here to pass explicitly)
+        params = {}
+        
+        params['STEPS'] = st.slider("Simulation Speed", 1, 20, 5)
+        params['GRID'] = 300 # Fixed as requested
         
         st.subheader("Species A (The Producer)")
-        growth_a = st.slider("A Growth Rate (Alpha)", 0.0, 1.0, 0.1, help="Intrinsic growth rate of A into empty space.")
-        prod_x = st.slider("Production of Food X", 0.1, 1.0, 0.5, help="How much food A provides for B.")
+        params['growth_a'] = st.slider("A Growth Rate (Alpha)", 0.0, 1.0, 0.1, step=0.01)
+        params['prod_x'] = st.slider("Production of Food X", 0.0, 1.0, 0.5, step=0.01)
         
         st.subheader("Species B (The Consumer)")
-        growth_b = st.slider("B Efficiency (Delta)", 0.0, 2.0, 0.8, help="How well B converts Food X into new B cells.")
-        death_b = st.slider("B Starvation Rate (Gamma)", 0.0, 0.1, 0.02, help="Rate at which B dies without food.")
+        # Explicit step=0.01 ensures we can hit exactly 0.0
+        params['growth_b'] = st.slider("B Efficiency (Delta)", 0.0, 2.0, 0.8, step=0.01, 
+                                     help="If 0, B cannot reproduce.")
+        params['death_b'] = st.slider("B Starvation Rate (Gamma)", 0.0, 0.1, 0.02, step=0.001)
         
         st.subheader("Chemical Warfare")
-        prod_y = st.slider("Production of Poison Y", 0.1, 1.0, 0.5, help="How much poison B creates.")
-        toxicity = st.slider("Lethality of Y (Beta)", 0.0, 2.0, 0.8, help="How effectively Poison Y kills A.")
+        params['prod_y'] = st.slider("Production of Poison Y", 0.0, 1.0, 0.5, step=0.01)
+        params['toxicity'] = st.slider("Lethality of Y (Beta)", 0.0, 2.0, 0.8, step=0.01)
 
         if st.button("Reset System"):
             st.session_state.cf_initialized = False
@@ -63,8 +66,9 @@ def app():
         st.session_state.cf_initialized = False
 
     def init_simulation():
+        GRID_SIZE = 300
         # Grid: 0=Empty, 1=Species A, 2=Species B
-        grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
+        grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=np.int8)
         
         # Random initialization (Salt and Pepper)
         r = np.random.random((GRID_SIZE, GRID_SIZE))
@@ -88,28 +92,29 @@ def app():
         init_simulation()
 
     # -----------------------
-    # 3. SIMULATION LOGIC
+    # 3. PURE SIMULATION FUNCTION
     # -----------------------
-    def step_simulation():
-        grid = st.session_state.cf_grid
-        X = st.session_state.cf_x # Food (made by A)
-        Y = st.session_state.cf_y # Poison (made by B)
+    def step_simulation(grid, X, Y, p):
+        """
+        Pure function: takes current state and parameters, returns new state.
+        This ensures parameters p are always fresh from the slider.
+        """
         
         # --- A. Reaction-Diffusion of Chemicals ---
         
-        # 1. Production
         mask_A = (grid == 1)
         mask_B = (grid == 2)
         
-        X += prod_x * mask_A # A makes X
-        Y += prod_y * mask_B # B makes Y
+        # 1. Production
+        if p['prod_x'] > 0: X += p['prod_x'] * mask_A
+        if p['prod_y'] > 0: Y += p['prod_y'] * mask_B
         
         # 2. Diffusion
         X += D_DIFFUSION * laplacian(X)
         Y += D_DIFFUSION * laplacian(Y)
         
         # 3. Decay/Consumption
-        # B consumes X to grow, but we model simple decay + uptake here
+        # B consumes X to grow
         consumption_X = mask_B * X * 0.2
         X -= (DECAY_RATE * X) + consumption_X
         Y -= DECAY_RATE * Y
@@ -125,13 +130,12 @@ def app():
         
         # --- DEATH RULES ---
         
-        # A dies due to Poison Y (Predation Term)
-        # Probability of death = Toxicity * Concentration of Y
-        prob_death_A = toxicity * Y * 0.1
+        # A dies due to Poison Y
+        prob_death_A = p['toxicity'] * Y * 0.1
         kill_A = mask_A & (rand_death < prob_death_A)
         
-        # B dies due to natural decay (Starvation Term)
-        prob_death_B = death_b
+        # B dies due to starvation
+        prob_death_B = p['death_b']
         kill_B = mask_B & (rand_death < prob_death_B)
         
         grid[kill_A] = 0
@@ -139,48 +143,36 @@ def app():
         
         # --- BIRTH RULES ---
         
-        # Shift for neighbor checking (von Neumann neighborhood)
+        # Neighborhood check
         shifts = [(0,1), (0,-1), (1,0), (-1,0)]
-        shift_idx = np.random.randint(0, 4)
-        sx, sy = shifts[shift_idx]
+        sx, sy = shifts[np.random.randint(0, 4)]
         neighbor_grid = np.roll(grid, sx, axis=0)
         neighbor_grid = np.roll(neighbor_grid, sy, axis=1)
         
         mask_empty = (grid == 0)
         
         # Growth of A (Producer)
-        # Grows naturally into empty space (Logistic Growth Term)
-        birth_A = mask_empty & (neighbor_grid == 1) & (rand_birth < growth_a)
+        if p['growth_a'] > 0:
+            birth_A = mask_empty & (neighbor_grid == 1) & (rand_birth < p['growth_a'])
+            grid[birth_A] = 1
         
         # Growth of B (Consumer)
-        # Grows into empty space ONLY if Food X is present (Growth Term)
-        # Probability = Efficiency * Concentration of X
-        prob_growth_B = growth_b * X
-        birth_B = mask_empty & (neighbor_grid == 2) & (rand_birth < prob_growth_B)
-        
-        # Apply updates
-        grid[birth_A] = 1
-        grid[birth_B] = 2
-        
-        # State Update
-        st.session_state.cf_grid = grid
-        st.session_state.cf_x = X
-        st.session_state.cf_y = Y
-        st.session_state.cf_time += 1
-        
-        if st.session_state.cf_time % 5 == 0:
-            hist = st.session_state.cf_hist
-            hist["time"].append(st.session_state.cf_time)
-            hist["pop_a"].append(int(np.sum(grid == 1)))
-            hist["pop_b"].append(int(np.sum(grid == 2)))
+        if p['growth_b'] > 0:
+            # Probability = Efficiency * Concentration of X
+            prob_growth_B = p['growth_b'] * X
+            birth_B = mask_empty & (neighbor_grid == 2) & (rand_birth < prob_growth_B)
+            # B writes over A's birth if collision occurs (Competition advantage to predator)
+            grid[birth_B] = 2 
+            
+        return grid, X, Y
 
     # -----------------------
-    # 4. VISUALIZATION
+    # 4. RUNNER LOOP
     # -----------------------
     col_main, col_plots = st.columns([1.5, 1])
     
     with col_main:
-        st.write("### Spatial Battleground")
+        st.write("### Spatial Battleground (300x300)")
         legend = """
         <div style='display: flex; gap: 15px; font-size: 14px; margin-bottom:10px;'>
             <div><span style='color:#FF4444; font-size:20px'>■</span> <b>Producer A</b></div>
@@ -198,15 +190,33 @@ def app():
     run_sim = st.toggle("Run Simulation", value=False)
     
     if run_sim:
-        for _ in range(STEPS_PER_FRAME):
-            step_simulation()
+        grid = st.session_state.cf_grid
+        X = st.session_state.cf_x
+        Y = st.session_state.cf_y
+        
+        # Run steps
+        for _ in range(params['STEPS']):
+            grid, X, Y = step_simulation(grid, X, Y, params)
+            st.session_state.cf_time += 1
+            
+            # Record Stats sparingly
+            if st.session_state.cf_time % 5 == 0:
+                hist = st.session_state.cf_hist
+                hist["time"].append(st.session_state.cf_time)
+                hist["pop_a"].append(int(np.sum(grid == 1)))
+                hist["pop_b"].append(int(np.sum(grid == 2)))
+        
+        # Update State
+        st.session_state.cf_grid = grid
+        st.session_state.cf_x = X
+        st.session_state.cf_y = Y
         st.rerun()
         
     # Construct Image
     grid = st.session_state.cf_grid
     Y = st.session_state.cf_y
     
-    img = np.zeros((GRID_SIZE, GRID_SIZE, 3))
+    img = np.zeros((300, 300, 3))
     
     # Red for A
     img[grid == 1] = [1.0, 0.2, 0.2]
