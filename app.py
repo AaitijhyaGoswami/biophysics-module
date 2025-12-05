@@ -40,6 +40,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from simulations import cross_feeding
+    modules["Cross-Feeding (Syntrophy)"] = cross_feeding
+except ImportError:
+    pass
+
 # -------------------------------------------------------------------------
 # SIDEBAR NAVIGATION
 # -------------------------------------------------------------------------
@@ -89,6 +95,10 @@ if page == "Home":
         **4. Rock-Paper-Scissors (rps_sim)**
         * *Concept:* Non-transitive cyclic dominance in ecosystems.
         * *Visuals:* Biodiversity preservation through spatial spiral waves.
+        
+        **5. Cross-Feeding (cross_feeding)**
+        * *Concept:* Metabolic interdependence (Syntrophy).
+        * *Visuals:* "Chasing" waves where a consumer species follows a producer species to access byproducts.
         """)
         
         st.info("👈 **Select a simulation from the sidebar to begin.**")
