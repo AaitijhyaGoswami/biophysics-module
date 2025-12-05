@@ -1,10 +1,20 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
+import altair as alt
 from scipy.ndimage import gaussian_filter
 
 def app():
+    st.title("Stochastic Bacterial Colony Growth")
+    st.markdown("""
+    **Simulation Details:**
+    * **Model:** Reaction-Diffusion system with stochastic noise.
+    * **Dynamics:** Nutrient consumption, metabolic diffusion, and exclusion principles.
+    * **Visualization:** Real-time colony morphology and nutrient depletion fields.
+    """)
+
     # -----------------------------
-    # 1. PARAMETERS (Matching Original)
+    # 1. PARAMETERS (Sidebar)
     # -----------------------------
     st.sidebar.subheader("Physics Parameters")
     
@@ -83,8 +93,12 @@ def app():
         st.session_state.bg_seed_ids = seed_ids
         st.session_state.bg_mask = mask
         st.session_state.bg_time = 0
-        st.session_state.bg_pop_history = []
-        st.session_state.bg_nut_history = []
+        
+        # History lists
+        st.session_state.bg_hist_time = []      # New: Tracks X-axis (Time)
+        st.session_state.bg_pop_history = []    # Tracks Biomass
+        st.session_state.bg_nut_history = []    # Tracks Nutrient
+        
         st.session_state.bg_initialized = True
 
     # Initialize on first load
@@ -99,13 +113,13 @@ def app():
     # -----------------------------
     # 4. MAIN SIMULATION LOOP
     # -----------------------------
-    st.title("Stochastic Bacterial Colony Growth")
     
     col1, col2, col3 = st.columns(3)
     placeholder_colony = col1.empty()
     placeholder_nutrient = col2.empty()
     placeholder_biomass = col3.empty()
     
+    # Placeholder for the Altair chart
     chart_placeholder = st.empty()
 
     run_sim = st.toggle("Run Simulation", value=False)
@@ -160,9 +174,12 @@ def app():
                 seed_ids[(neighbors_mask & (seed_ids==0) & (bacteria>0))] = i
 
         # Update History
+        st.session_state.bg_time += STEPS_PER_FRAME
+        
+        # Append data points for chart
+        st.session_state.bg_hist_time.append(st.session_state.bg_time)
         st.session_state.bg_pop_history.append(np.sum(bacteria))
         st.session_state.bg_nut_history.append(np.sum(food))
-        st.session_state.bg_time += STEPS_PER_FRAME
 
         # Save back to state
         st.session_state.bg_bacteria = bacteria
@@ -223,10 +240,29 @@ def app():
     placeholder_nutrient.image(nutr_img, caption="Nutrient", clamp=True, use_column_width=True)
     placeholder_biomass.image(bio_img, caption="Biomass", clamp=True, use_column_width=True)
 
-    # Update Charts
+    # -----------------------------
+    # 6. GRAPHS (Altair with Axis Labels)
+    # -----------------------------
     if len(st.session_state.bg_pop_history) > 0:
-        with chart_placeholder:
-            st.line_chart({
-                "Biomass": st.session_state.bg_pop_history,
-                "Nutrient": st.session_state.bg_nut_history
-            })
+        # Create a DataFrame with the explicit time index
+        data = pd.DataFrame({
+            "Time (mins)": st.session_state.bg_hist_time,
+            "Total Biomass": st.session_state.bg_pop_history,
+            "Total Nutrient": st.session_state.bg_nut_history
+        })
+        
+        # Melt data for Altair (Long format is better for multi-line charts)
+        data_melted = data.melt('Time (mins)', var_name='Metric', value_name='Value')
+
+        # Create the Chart
+        chart = alt.Chart(data_melted).mark_line().encode(
+            x=alt.X('Time (mins)', title='Time (minutes)'),
+            y=alt.Y('Value', title='Quantity (a.u.)'),
+            color=alt.Color('Metric', legend=alt.Legend(title="Metrics")),
+            tooltip=['Time (mins)', 'Metric', 'Value']
+        ).properties(
+            title="Global Population Dynamics"
+        ).interactive()
+
+        # Render in the placeholder
+        chart_placeholder.altair_chart(chart, use_container_width=True)
