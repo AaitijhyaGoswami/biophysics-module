@@ -5,337 +5,293 @@ import altair as alt
 
 def app():
     # -----------------------
-    # Helper: laplacian (periodic)
+    # 0. CONFIGURATION & HELPERS
     # -----------------------
+    # Fixed Physics Constants (Hidden from user for stability)
+    D_DIFFUSION = 0.8   # Rate of metabolite diffusion
+    DECAY_RATE = 0.02   # Rate at which metabolites break down
+    FEED_RATE = 0.03    # Rate at which fresh Nutrient N enters system
+    
     def laplacian(field):
+        """Discrete Laplace operator for diffusion"""
         return (
-            np.roll(field, 1, axis=0)
-            + np.roll(field, -1, axis=0)
-            + np.roll(field, 1, axis=1)
-            + np.roll(field, -1, axis=1)
-            - 4 * field
+            np.roll(field, 1, axis=0) + 
+            np.roll(field, -1, axis=0) + 
+            np.roll(field, 1, axis=1) + 
+            np.roll(field, -1, axis=1) - 
+            4 * field
         )
 
-    # -----------------------
-    # App UI / Parameters
-    # -----------------------
-    st.title("Cross-feeding (A ↔ B) — Spatial Reaction-Diffusion CA")
+    st.title("Syntrophic Cross-Feeding & Oscillations")
     st.markdown("""
-    A simple spatial cross-feeding model:
-    - **A** consumes nutrient **N** and excretes **M_A**.
-    - **B** consumes **M_A** and excretes **M_B**, which inhibits **A**.
-    - Metabolites diffuse and decay. Local reproduction is probabilistic and depends on resource availability.
+    **The Mechanism:**
+    1.  [Image of bacterial cross feeding diagram]
+    2.  **Species A (Red)** eats Nutrient N $\\to$ secretes Metabolite X.
+    3.  **Species B (Green)** eats Metabolite X $\\to$ secretes Toxin Y.
+    4.  **Toxin Y** inhibits Species A.
+    
+    **Result:** A 'Red' bloom creates food for 'Green'. 'Green' blooms and poisons 'Red'. 'Red' dies, 'Green' starves. The cycle repeats.
     """)
 
-    # -----------------------------
-    # 1. PARAMETERS (Sidebar)
-    # -----------------------------
-    st.sidebar.header("Simulation parameters")
-
-    GRID = st.sidebar.slider("Grid size (N × N)", 100, 400, 220, step=20)
-    PETRI_WIDTH = st.sidebar.slider("Petri display width (px)", 300, 1000, 700, step=50)
-
-    STEPS_PER_FRAME = st.sidebar.slider("Steps per frame", 1, 25, 6)
-    dt = st.sidebar.number_input("Timestep (dt)", value=1.0, step=0.1)
-
-    st.sidebar.subheader("Species parameters")
-    p_spread_A = st.sidebar.slider("Base spread A (prob)", 0.0, 1.0, 0.20)
-    p_spread_B = st.sidebar.slider("Base spread B (prob)", 0.0, 1.0, 0.25) # Increased from 0.18
-    death_A = st.sidebar.slider("Death prob A", 0.0, 0.1, 0.002)
-    death_B = st.sidebar.slider("Death prob B", 0.0, 0.1, 0.001) # Decreased from 0.002
-
-    st.sidebar.subheader("Resource / Metabolite physics")
-    # Added Feed Rate for sustained oscillations
-    feed_N = st.sidebar.slider("Nutrient feed rate (Chemostat)", 0.0, 0.2, 0.04) 
-    D_m = st.sidebar.slider("Metabolite diffusion D_m", 0.0, 1.0, 0.6)
-    decay_m = st.sidebar.slider("Metabolite decay", 0.0, 1.0, 0.01)
-    
-    # Tuned defaults for survival
-    prod_A = st.sidebar.slider("A produces M_A (per A per dt)", 0.0, 1.0, 0.40) # Increased from 0.12
-    prod_B = st.sidebar.slider("B produces M_B (per B per dt)", 0.0, 1.0, 0.08)
-    cons_N_by_A = st.sidebar.slider("A consumption of N (per A per dt)", 0.0, 1.0, 0.06)
-    cons_MA_by_B = st.sidebar.slider("B consumption of M_A (scales growth)", 0.0, 1.0, 0.12)
-
-    st.sidebar.subheader("Interaction strengths")
-    K_N = st.sidebar.slider("Half-sat nutrient K_N (A growth)", 0.01, 5.0, 0.5)
-    K_MA = st.sidebar.slider("Half-sat M_A K_MA (B growth)", 0.01, 5.0, 0.1) # Decreased from 0.4 for better B growth
-    inhib_MB_on_A = st.sidebar.slider("Inhibition of A by M_B (0=no, 1=strong)", 0.0, 2.0, 1.2)
-
-    st.sidebar.subheader("Initial densities")
-    init_A = st.sidebar.slider("Init A fraction", 0.0, 0.5, 0.015)
-    init_B = st.sidebar.slider("Init B fraction", 0.0, 0.5, 0.05) # Increased from 0.015
-    init_empty = 1.0 - (init_A + init_B)
-    st.sidebar.caption(f"Init empty (rest) ≈ {init_empty:.3f}")
-
-    # Constants
-    EMPTY = 0
-    A = 1
-    B = 2
-
-    # -----------------------------
-    # 2. HELPER FUNCTIONS (Simulation Logic)
-    # -----------------------------
-    def sim_step(grid, ma, mb, N, mask):
-        dx = np.random.randint(-1, 2, size=(GRID, GRID))
-        dy = np.random.randint(-1, 2, size=(GRID, GRID))
-        x_idx, y_idx = np.indices((GRID, GRID))
-        nx = (x_idx + dx) % GRID
-        ny = (y_idx + dy) % GRID
-
-        neighbor = grid[nx, ny]
-        selfg = grid
-
-        N_local = N
-        mb_local = mb
-        ma_local = ma
-
-        # Growth potential
-        growth_A_local = (N_local / (N_local + K_N)) * (1.0 / (1.0 + inhib_MB_on_A * mb_local))
-        growth_B_local = (ma_local / (ma_local + K_MA))
-
-        r_spread = np.random.rand(GRID, GRID)
-        r_death = np.random.rand(GRID, GRID)
-
-        # Death events
-        death_events_A = (selfg == A) & (r_death < death_A)
-        death_events_B = (selfg == B) & (r_death < death_B)
-        grid_after_death = grid.copy()
-        grid_after_death[death_events_A | death_events_B] = EMPTY
-
-        S = neighbor
-        T = grid_after_death
-        valid = mask & mask[nx, ny]
-
-        # Reproduction A
-        prob_repro_A = p_spread_A * growth_A_local[nx, ny]
-        repro_A = valid & (S == A) & (T == EMPTY) & (r_spread < prob_repro_A)
-
-        # Reproduction B
-        prob_repro_B = p_spread_B * growth_B_local[nx, ny]
-        repro_B = valid & (S == B) & (T == EMPTY) & (r_spread < prob_repro_B)
-
-        # Competition: B takes over A
-        takeover_B_on_A = valid & (S == B) & (T == A) & (r_spread < (0.02 + 0.2 * (ma[nx, ny] / (ma[nx, ny] + 0.2))))
-
-        new_grid = T.copy()
-        new_grid[repro_A] = A
-        new_grid[repro_B] = B
-        new_grid[takeover_B_on_A] = B
-
-        # Metabolism fields
-        prodA_field = prod_A * (new_grid == A).astype(float)
-        prodB_field = prod_B * (new_grid == B).astype(float)
-
-        consN_field = cons_N_by_A * (new_grid == A).astype(float)
-        uptake_MA_by_B = cons_MA_by_B * (new_grid == B).astype(float) * (ma / (ma + 1e-6))
-
-        lap_ma = laplacian(ma)
-        lap_mb = laplacian(mb)
+    # -----------------------
+    # 1. SIMPLIFIED PARAMETERS
+    # -----------------------
+    with st.sidebar:
+        st.header("Control Panel")
         
-        # Reaction-Diffusion Update
-        ma = ma + dt * (D_m * lap_ma + prodA_field - uptake_MA_by_B - decay_m * ma)
-        mb = mb + dt * (D_m * lap_mb + prodB_field - decay_m * mb)
+        # A. Simulation Speed
+        GRID_SIZE = 150
+        STEPS_PER_FRAME = st.slider("Simulation Speed", 1, 30, 8)
         
-        # Nutrient Update with Feed (Chemostat logic)
-        N = N + dt * (feed_N * (1.0 - N) - consN_field)
+        st.subheader("Biological Rates")
+        
+        # 1. Growth/Death Balance
+        repro_rate = st.slider("Reproduction Rate", 0.1, 1.0, 0.4, 
+                             help="How fast bacteria multiply when food is abundant.")
+        
+        death_rate = st.slider("Death Rate", 0.001, 0.1, 0.02, format="%.3f",
+                             help="Base mortality rate.")
 
-        # Clamping
-        ma = np.clip(ma, 0, None)
-        mb = np.clip(mb, 0, None)
-        N = np.clip(N, 0, 1)
+        # 2. Interaction Strength
+        st.subheader("Interactions")
+        
+        metabolic_yield = st.slider("Metabolic Yield", 0.1, 2.0, 0.8,
+                                  help="How much food X is produced by A? High = B grows easier.")
+        
+        toxicity = st.slider("Inhibition Strength", 0.0, 5.0, 2.5,
+                           help="How strongly B poisons A. High = Strong Oscillations.")
 
-        # Apply Mask
-        new_grid[~mask] = EMPTY
-        ma[~mask] = 0
-        mb[~mask] = 0
-        N[~mask] = 0
+        # 3. System Energy
+        nutrient_supply = st.slider("Nutrient Supply (Chemostat)", 0.0, 1.0, 0.5,
+                                  help="Availability of base resource N.")
 
-        return new_grid, ma, mb, N
+        if st.button("Reset Simulation"):
+            st.session_state.cf_initialized = False
+            st.rerun()
 
-    # -----------------------------
-    # 3. INITIALIZATION (Session State)
-    # -----------------------------
+    # -----------------------
+    # 2. STATE INITIALIZATION
+    # -----------------------
     if 'cf_initialized' not in st.session_state:
         st.session_state.cf_initialized = False
 
-    def reset_simulation():
-        yy, xx = np.indices((GRID, GRID))
-        center = GRID // 2
-        radius = GRID // 2 - 2
-        mask = (xx - center) ** 2 + (yy - center) ** 2 <= radius ** 2
+    def init_simulation():
+        # Grid: 0=Empty, 1=Species A, 2=Species B
+        grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
+        
+        # Seed random clusters
+        num_blobs = 15
+        for _ in range(num_blobs):
+            rx, ry = np.random.randint(0, GRID_SIZE, 2)
+            # Create a blob
+            y, x = np.ogrid[-10:10, -10:10]
+            mask = x*x + y*y <= 25
+            
+            # Place A and B near each other
+            region_x = (np.arange(20) + rx - 10) % GRID_SIZE
+            region_y = (np.arange(20)[:,None] + ry - 10) % GRID_SIZE
+            
+            # 50/50 mix in blobs
+            blob_grid = np.random.choice([0, 1, 2], (20, 20), p=[0.2, 0.4, 0.4])
+            grid[np.ix_(region_x, region_y[0])] = np.where(mask, blob_grid, 0)
 
-        grid = np.zeros((GRID, GRID), dtype=np.int8)
-        r = np.random.rand(GRID, GRID)
-        grid[(r < init_A) & mask] = A
-        grid[(r >= init_A) & (r < init_A + init_B) & mask] = B
-        grid[~mask] = EMPTY
+        # Fields: N (Base), X (Food for B), Y (Toxin for A)
+        field_n = np.ones((GRID_SIZE, GRID_SIZE)) * nutrient_supply
+        field_x = np.zeros((GRID_SIZE, GRID_SIZE))
+        field_y = np.zeros((GRID_SIZE, GRID_SIZE))
 
-        ma = np.zeros((GRID, GRID))
-        mb = np.zeros((GRID, GRID))
-        N = np.zeros((GRID, GRID))
-        N[mask] = 1.0
+        # History
+        hist = {"time": [], "pop_a": [], "pop_b": [], "res_x": []}
 
-        hist = {
-            "time": [],
-            "count_A": [],
-            "count_B": [],
-            "mean_MA": [],
-            "mean_MB": [],
-            "mean_N": []
-        }
-
-        # Save to session state
         st.session_state.cf_grid = grid
-        st.session_state.cf_mask = mask
-        st.session_state.cf_ma = ma
-        st.session_state.cf_mb = mb
-        st.session_state.cf_N = N
-        st.session_state.cf_t = 0
+        st.session_state.cf_n = field_n
+        st.session_state.cf_x = field_x
+        st.session_state.cf_y = field_y
+        st.session_state.cf_time = 0
         st.session_state.cf_hist = hist
         st.session_state.cf_initialized = True
 
     if not st.session_state.cf_initialized:
-        reset_simulation()
+        init_simulation()
 
-    if st.sidebar.button("Reset Simulation"):
-        reset_simulation()
-        st.rerun()
+    # -----------------------
+    # 3. CORE SIMULATION LOGIC
+    # -----------------------
+    def step_simulation():
+        grid = st.session_state.cf_grid
+        N = st.session_state.cf_n
+        X = st.session_state.cf_x
+        Y = st.session_state.cf_y
+        
+        # --- A. Field Dynamics (Reaction-Diffusion) ---
+        
+        # 1. Diffusion
+        N += D_DIFFUSION * laplacian(N)
+        X += D_DIFFUSION * laplacian(X)
+        Y += D_DIFFUSION * laplacian(Y)
+        
+        # 2. Production/Consumption based on Bacteria Presence
+        mask_A = (grid == 1)
+        mask_B = (grid == 2)
+        
+        # A eats N -> makes X
+        # Consumption rate depends on N availability
+        uptake_N = mask_A * N * 0.1
+        N -= uptake_N
+        X += uptake_N * metabolic_yield # A converts N to X
+        
+        # B eats X -> makes Y
+        uptake_X = mask_B * X * 0.1
+        X -= uptake_X
+        Y += uptake_X * metabolic_yield # B converts X to Y
+        
+        # 3. Decay & Chemostat Feed
+        N += FEED_RATE * (nutrient_supply - N) # Replenish N
+        X -= DECAY_RATE * X
+        Y -= DECAY_RATE * Y
+        
+        # Clamp fields
+        N = np.clip(N, 0, 1)
+        X = np.clip(X, 0, 1)
+        Y = np.clip(Y, 0, 1)
 
-    # -----------------------------
-    # 4. MAIN LAYOUT & VISUALS
-    # -----------------------------
-    col_vis, col_stats = st.columns([1.4, 1])
+        # --- B. Cellular Automata (Birth/Death) ---
+        
+        # Probabilities
+        rand_birth = np.random.random(grid.shape)
+        rand_death = np.random.random(grid.shape)
+        
+        # 1. Death Rules
+        # A dies from natural causes OR Toxin Y
+        prob_death_A = death_rate + (Y * toxicity * 0.1)
+        # B dies from natural causes (starvation included implicitly via lack of birth)
+        prob_death_B = death_rate
+        
+        kill_A = mask_A & (rand_death < prob_death_A)
+        kill_B = mask_B & (rand_death < prob_death_B)
+        
+        grid[kill_A] = 0
+        grid[kill_B] = 0
+        
+        # 2. Birth Rules (into empty neighbors)
+        # We simplify spatial spreading: random check of neighbor
+        # Shift grid to find neighbors
+        shifts = [(0,1), (0,-1), (1,0), (-1,0)]
+        idx = np.random.randint(0, 4) # Pick one random direction for this frame to save compute
+        sx, sy = shifts[idx]
+        
+        neighbor_grid = np.roll(grid, sx, axis=0)
+        neighbor_grid = np.roll(neighbor_grid, sy, axis=1)
+        
+        # Empty spots
+        mask_empty = (grid == 0)
+        
+        # If neighbor is A, can it reproduce into current empty spot?
+        # A needs Nutrient N
+        growth_A = repro_rate * N
+        birth_A = mask_empty & (neighbor_grid == 1) & (rand_birth < growth_A)
+        
+        # If neighbor is B, can it reproduce into current empty spot?
+        # B needs Metabolite X
+        growth_B = repro_rate * X
+        birth_B = mask_empty & (neighbor_grid == 2) & (rand_birth < growth_B)
+        
+        # Apply Births (A has priority in this simple model if collision, or just sequential)
+        grid[birth_A] = 1
+        grid[birth_B] = 2 # B overwrites A if collision (rare), effectively competition
 
-    with col_vis:
-        st.write("### Petri dish")
-        legend_html = """
-        <div style="display:flex; gap:12px; align-items:center; margin-bottom:6px;">
-          <div style="display:inline-block; width:12px; height:12px; background:#FF6666; border:1px solid #555"></div> A (Producer)
-          <div style="display:inline-block; width:12px; height:12px; background:#66CC66; border:1px solid #555; margin-left:10px;"></div> B (Consumer)
+        # Save State
+        st.session_state.cf_grid = grid
+        st.session_state.cf_n = N
+        st.session_state.cf_x = X
+        st.session_state.cf_y = Y
+        st.session_state.cf_time += 1
+        
+        # Stats
+        if st.session_state.cf_time % 2 == 0:
+            hist = st.session_state.cf_hist
+            hist["time"].append(st.session_state.cf_time)
+            hist["pop_a"].append(int(np.sum(grid == 1)))
+            hist["pop_b"].append(int(np.sum(grid == 2)))
+            hist["res_x"].append(float(np.mean(X)))
+
+    # -----------------------
+    # 4. RUNNER & VISUALIZATION
+    # -----------------------
+    col_main, col_plots = st.columns([1.5, 1])
+    
+    with col_main:
+        st.write("### Spatial Dynamics")
+        # Custom Legend
+        legend = """
+        <div style='display: flex; gap: 20px; font-size: 14px;'>
+            <div><span style='color:#FF4444; font-size:20px'>●</span> <b>Species A</b> (Producer)</div>
+            <div><span style='color:#44FF44; font-size:20px'>●</span> <b>Species B</b> (Consumer)</div>
         </div>
         """
-        st.markdown(legend_html, unsafe_allow_html=True)
-        dish_ph = st.empty()
+        st.markdown(legend, unsafe_allow_html=True)
+        dish_container = st.empty()
         
-        # Metabolite placeholders
-        col_m1, col_m2 = st.columns(2)
-        with col_m1:
-            ma_ph = st.empty()
-        with col_m2:
-            mb_ph = st.empty()
+    with col_plots:
+        st.write("### Populations (A vs B)")
+        chart_container = st.empty()
+        st.write("### Metabolic Field (X)")
+        field_container = st.empty()
 
-    with col_stats:
-        st.write("### Population & Metabolites")
-        chart_counts_ph = st.empty()
-        chart_frac_ph = st.empty()
-
-    # -----------------------------
-    # 5. SIMULATION LOOP (Toggle Logic)
-    # -----------------------------
     run_sim = st.toggle("Run Simulation", value=False)
 
     if run_sim:
         for _ in range(STEPS_PER_FRAME):
-            g, ma, mb, N = sim_step(
-                st.session_state.cf_grid, 
-                st.session_state.cf_ma, 
-                st.session_state.cf_mb, 
-                st.session_state.cf_N, 
-                st.session_state.cf_mask
-            )
-            
-            # Update state
-            st.session_state.cf_grid = g
-            st.session_state.cf_ma = ma
-            st.session_state.cf_mb = mb
-            st.session_state.cf_N = N
-            st.session_state.cf_t += 1
-
-            # Update history
-            hist = st.session_state.cf_hist
-            hist["time"].append(st.session_state.cf_t)
-            hist["count_A"].append(int(np.sum(g == A)))
-            hist["count_B"].append(int(np.sum(g == B)))
-            hist["mean_MA"].append(float(ma.mean()))
-            hist["mean_MB"].append(float(mb.mean()))
-            hist["mean_N"].append(float(N.mean()))
-            st.session_state.cf_hist = hist
-        
+            step_simulation()
         st.rerun()
 
-    # -----------------------------
-    # 6. RENDERING (Static)
-    # -----------------------------
+    # RENDER IMAGE
     grid = st.session_state.cf_grid
-    ma = st.session_state.cf_ma
-    mb = st.session_state.cf_mb
-    mask = st.session_state.cf_mask
+    
+    # Create RGB Image
+    # R channel = Species A
+    # G channel = Species B
+    # B channel = Toxin Y (faint visualization)
+    img = np.zeros((GRID_SIZE, GRID_SIZE, 3))
+    
+    mask_a = (grid == 1)
+    mask_b = (grid == 2)
+    
+    img[mask_a] = [1.0, 0.2, 0.2] # Red
+    img[mask_b] = [0.2, 1.0, 0.2] # Green
+    
+    # Background (traces of chemicals)
+    # We overlay the metabolite X in blueish for visibility
+    X = st.session_state.cf_x
+    img[~(mask_a | mask_b), 2] = X[~(mask_a | mask_b)] 
+
+    dish_container.image(img, use_column_width=True, clamp=True)
+
+    # RENDER CHARTS
     hist = st.session_state.cf_hist
-
-    # A. Petri Dish Image
-    img = np.zeros((GRID, GRID, 3), float)
-    img[grid == A] = [1.0, 0.35, 0.35] # Reddish for A
-    img[grid == B] = [0.35, 1.0, 0.45] # Greenish for B
-    img[~mask] = 0.05
-    dish_ph.image(img, width=PETRI_WIDTH)
-
-    # B. Metabolite Heatmaps
-    ma_norm = ma / ma.max() if ma.max() > 0 else ma
-    mb_norm = mb / mb.max() if mb.max() > 0 else mb
-
-    ma_rgb = np.zeros_like(img)
-    mb_rgb = np.zeros_like(img)
-    
-    ma_rgb[..., 0] = ma_norm # Red channel for MA
-    mb_rgb[..., 1] = mb_norm # Green channel for MB
-    
-    ma_rgb[~mask] = 0
-    mb_rgb[~mask] = 0
-
-    ma_ph.image(ma_rgb, caption="Metabolite A (MA)", use_column_width=True, clamp=True)
-    mb_ph.image(mb_rgb, caption="Metabolite B (MB)", use_column_width=True, clamp=True)
-
-    # C. Altair Charts
-    if len(hist["time"]) > 0:
-        # 1. Counts Chart
+    if len(hist["time"]) > 2:
         df = pd.DataFrame({
             "Time": hist["time"],
-            "A": hist["count_A"],
-            "B": hist["count_B"],
-            "Mean MA": hist["mean_MA"],
-            "Mean MB": hist["mean_MB"],
-            "Mean N": hist["mean_N"]
+            "Species A": hist["pop_a"],
+            "Species B": hist["pop_b"]
         })
-
-        df_melt = df.melt("Time", var_name="Species", value_name="Count")
-        chart_c = alt.Chart(df_melt[df_melt["Species"].isin(["A", "B"])]).mark_line().encode(
-            x="Time", y="Count",
-            color=alt.Color("Species", scale=alt.Scale(domain=["A","B"],range=["#FF6666","#66CC66"]))
-        ).properties(height=220)
-        chart_counts_ph.altair_chart(chart_c, use_container_width=True)
-
-        # 2. Fractions Chart
-        df["total"] = (df["A"] + df["B"]).replace(0, 1)
-        df_frac = pd.DataFrame({
-            "Time": df["Time"],
-            "A_frac": df["A"]/df["total"],
-            "B_frac": df["B"]/df["total"]
-        }).melt("Time", var_name="Species", value_name="Fraction")
-
-        chart_f = alt.Chart(df_frac).mark_line().encode(
-            x="Time",
-            y=alt.Y("Fraction", axis=alt.Axis(format='%')),
-            color=alt.Color("Species", scale=alt.Scale(domain=["A_frac","B_frac"], range=["#FF6666","#66CC66"]))
-        ).properties(height=180)
-        chart_frac_ph.altair_chart(chart_f, use_container_width=True)
-    
-    # Tips (Outside columns)
-    st.write("### Controls / tips")
-    st.markdown("""
-    - Increase diffusion `D_m` for smoother fields.
-    - Increasing `inhib_MB_on_A` produces stronger oscillations.
-    - `STEPS per frame` controls simulation speed.
-    """)
+        
+        melted = df.melt("Time", var_name="Species", value_name="Population")
+        
+        c = alt.Chart(melted).mark_line().encode(
+            x="Time", 
+            y="Population", 
+            color=alt.Color("Species", scale=alt.Scale(range=['#FF4444', '#44FF44']))
+        ).properties(height=200)
+        
+        chart_container.altair_chart(c, use_container_width=True)
+        
+        # Field strength chart
+        df_x = pd.DataFrame({"Time": hist["time"], "Metabolite X": hist["res_x"]})
+        c_x = alt.Chart(df_x).mark_area(opacity=0.3, color='blue').encode(
+            x="Time", y="Metabolite X"
+        ).properties(height=150)
+        field_container.altair_chart(c_x, use_container_width=True)
 
 if __name__ == "__main__":
     app()
