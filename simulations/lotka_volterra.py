@@ -200,7 +200,7 @@ def app():
         
         chart_nutr = alt.Chart(df_nutr).mark_line(color='green').encode(
             x=alt.X('Time', axis=alt.Axis(title='Time (minutes)')),
-            y=alt.Y('Nutrient', axis=alt.Axis(title='Total Nutrient Level'))
+            y=alt.Y('Nutrient', axis=alt.Axis(title='Total Nutrient'))
         ).properties(height=150)
         
         nutr_chart.altair_chart(chart_nutr, use_container_width=True)
@@ -213,10 +213,11 @@ def app():
         
         chart_ratio = alt.Chart(df_ratio).mark_line(color='orange').encode(
             x=alt.X('Time', axis=alt.Axis(title='Time (minutes)')),
-            y=alt.Y('Ratio', axis=alt.Axis(title='Predator/Prey Ratio'))
+            y=alt.Y('Ratio', axis=alt.Axis(title='Predator/Prey'))
         ).properties(height=150)
         
         ratio_chart.altair_chart(chart_ratio, use_container_width=True)
 
 if __name__ == "__main__":
     app()
+
