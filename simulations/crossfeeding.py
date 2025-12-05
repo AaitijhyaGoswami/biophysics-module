@@ -177,7 +177,7 @@ def app():
     col_main, col_plots = st.columns([1.5, 1])
     
     with col_main:
-        st.write("### Spatial Species Distribution")
+        st.write("### Spatial Distribution of Species")
         legend = """
         <div style='display: flex; gap: 15px; font-size: 14px; margin-bottom:10px;'>
             <div><span style='color:#FF4444; font-size:20px'>■</span> <b>Producer A</b></div>
