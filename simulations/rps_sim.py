@@ -184,7 +184,8 @@ def app():
     )
 
     if len(st.session_state.rps_hist_time) > 0:
-     df = pd.DataFrame({
+        
+        df = pd.DataFrame({
             'Time': st.session_state.rps_hist_time,
             'Toxic (Red)': st.session_state.rps_hist_red,
             'Sensitive (Green)': st.session_state.rps_hist_green,
@@ -234,6 +235,7 @@ def app():
 
 if __name__ == "__main__":
     app()
+
 
 
 
