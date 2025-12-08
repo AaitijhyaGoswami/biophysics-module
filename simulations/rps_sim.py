@@ -218,7 +218,7 @@ def app():
 
         chart_counts.altair_chart(chart, use_container_width=True)
 
-        df["Total"] = (
+df["Total"] = (
             df["Toxic (Red)"]
             + df["Sensitive (Green)"]
             + df["Resistive (Blue)"]
@@ -236,11 +236,7 @@ def app():
             .mark_line()
             .encode(
                 x=alt.X("Time"),
-                y=alt.Y(
-                    "Fraction",
-                    title="Population Fraction",
-                    scale=alt.Scale(domain=[0, 1])     # ← ← FIXED Y-AXIS HERE
-                ),
+                y=alt.Y("Fraction"),
                 color=alt.Color(
                     "Strain",
                     scale=alt.Scale(
@@ -258,9 +254,8 @@ def app():
 
         chart_fracs.altair_chart(chart2, use_container_width=True)
 
-
-
 if __name__ == "__main__":
     app()
+
 
 
