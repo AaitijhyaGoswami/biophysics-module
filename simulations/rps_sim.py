@@ -225,18 +225,22 @@ def app():
         ).replace(0, 1)
 
         df_frac = df.copy()
-        df_frac["Toxic (Red)"] = 100 * df_frac["Toxic (Red)"] / df["Total"]
-        df_frac["Sensitive (Green)"] = 100 * df_frac["Sensitive (Green)"] / df["Total"]
-        df_frac["Resistive (Blue)"] = 100 * df_frac["Resistive (Blue)"] / df["Total"]
+        df_frac["Toxic (Red)"] /= df["Total"]
+        df_frac["Sensitive (Green)"] /= df["Total"]
+        df_frac["Resistive (Blue)"] /= df["Total"]
 
-        df_frac_melt = df_frac.melt("Time", var_name="Strain", value_name="Percent")
+        df_frac_melt = df_frac.melt("Time", var_name="Strain", value_name="Fraction")
 
         chart2 = (
             alt.Chart(df_frac_melt)
             .mark_line()
             .encode(
                 x=alt.X("Time"),
-                y=alt.Y("Percent", title="Population (%)"),
+                y=alt.Y(
+                    "Fraction",
+                    title="Population Fraction",
+                    scale=alt.Scale(domain=[0, 1])     # ← ← FIXED Y-AXIS HERE
+                ),
                 color=alt.Color(
                     "Strain",
                     scale=alt.Scale(
@@ -255,6 +259,8 @@ def app():
         chart_fracs.altair_chart(chart2, use_container_width=True)
 
 
+
 if __name__ == "__main__":
     app()
+
 
