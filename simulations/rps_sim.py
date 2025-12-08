@@ -184,43 +184,57 @@ def app():
     )
 
     if len(st.session_state.rps_hist_time) > 0:
-        df = pd.DataFrame(
-            {
-                "Time": st.session_state.rps_hist_time,
-                "Toxic (Red)": st.session_state.rps_hist_red,
-                "Sensitive (Green)": st.session_state.rps_hist_green,
-                "Resistive (Blue)": st.session_state.rps_hist_blue,
-            }
-        )
-
-        df_melt = df.melt("Time", var_name="Strain", value_name="Count")
-
-        chart = (
-            alt.Chart(df_melt)
-            .mark_line()
-            .encode(
-                x=alt.X("Time"),
-                y=alt.Y("Count"),
-                color=alt.Color(
-                    "Strain",
-                    scale=alt.Scale(
-                        domain=[
-                            "Toxic (Red)",
-                            "Sensitive (Green)",
-                            "Resistive (Blue)",
-                        ],
-                        range=["#FF3333", "#33FF33", "#3366FF"],
-                    ),
-                ),
-            )
-            .properties(height=200)
-        )
-
-        chart_counts.altair_chart(chart, use_container_width=True)
+df = pd.DataFrame({
+            'Time': st.session_state.rps_hist_time,
+            'Toxic (Red)': st.session_state.rps_hist_red,
+            'Sensitive (Green)': st.session_state.rps_hist_green,
+            'Resistive (Blue)': st.session_state.rps_hist_blue
+        })
+        
+        # 1. Absolute Counts
+        df_melt = df.melt('Time', var_name='Strain', value_name='Count')
+        
+        chart_c = alt.Chart(df_melt).mark_line().encode(
+            x=alt.X('Time', axis=alt.Axis(title='Time (Generations)')),
+            y=alt.Y('Count', axis=alt.Axis(title='Population Size')),
+            color=alt.Color('Strain', scale=alt.Scale(
+                domain=['Toxic (Red)', 'Sensitive (Green)', 'Resistive (Blue)'],
+                range=['#FF3333', '#33FF33', '#3366FF']
+            ))
+        ).properties(height=200)
+        
+        chart_counts.altair_chart(chart_c, use_container_width=True)
+        
+        # 2. Fractions (Normalized)
+        # Calculate fractions
+        df['Total'] = df['Toxic (Red)'] + df['Sensitive (Green)'] + df['Resistive (Blue)']
+        # Avoid div by zero
+        df['Total'] = df['Total'].replace(0, 1) 
+        
+        df_frac = pd.DataFrame({
+            'Time': df['Time'],
+            'Toxic (Red)': df['Toxic (Red)'] / df['Total'],
+            'Sensitive (Green)': df['Sensitive (Green)'] / df['Total'],
+            'Resistive (Blue)': df['Resistive (Blue)'] / df['Total']
+        })
+        
+        df_frac_melt = df_frac.melt('Time', var_name='Strain', value_name='Fraction')
+        
+        chart_f = alt.Chart(df_frac_melt).mark_line().encode(
+            x=alt.X('Time', axis=alt.Axis(title='Time (Generations)')),
+            y=alt.Y('Fraction', axis=alt.Axis(title='Relative Abundance', format='%')),
+            color=alt.Color('Strain', scale=alt.Scale(
+                domain=['Toxic (Red)', 'Sensitive (Green)', 'Resistive (Blue)'],
+                range=['#FF3333', '#33FF33', '#3366FF']
+            ))
+        ).properties(height=200)
+        
+        chart_fracs.altair_chart(chart_f, use_container_width=True)
 
 
 if __name__ == "__main__":
     app()
+
 
 
 
