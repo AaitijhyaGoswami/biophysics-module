@@ -218,44 +218,10 @@ def app():
 
         chart_counts.altair_chart(chart, use_container_width=True)
 
-df["Total"] = (
-            df["Toxic (Red)"]
-            + df["Sensitive (Green)"]
-            + df["Resistive (Blue)"]
-        ).replace(0, 1)
-
-        df_frac = df.copy()
-        df_frac["Toxic (Red)"] /= df["Total"]
-        df_frac["Sensitive (Green)"] /= df["Total"]
-        df_frac["Resistive (Blue)"] /= df["Total"]
-
-        df_frac_melt = df_frac.melt("Time", var_name="Strain", value_name="Fraction")
-
-        chart2 = (
-            alt.Chart(df_frac_melt)
-            .mark_line()
-            .encode(
-                x=alt.X("Time"),
-                y=alt.Y("Fraction"),
-                color=alt.Color(
-                    "Strain",
-                    scale=alt.Scale(
-                        domain=[
-                            "Toxic (Red)",
-                            "Sensitive (Green)",
-                            "Resistive (Blue)",
-                        ],
-                        range=["#FF3333", "#33FF33", "#3366FF"],
-                    ),
-                ),
-            )
-            .properties(height=200)
-        )
-
-        chart_fracs.altair_chart(chart2, use_container_width=True)
 
 if __name__ == "__main__":
     app()
+
 
 
 
