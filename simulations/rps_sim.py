@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import altair as alt
+from . import utils
 
 
 def app():
@@ -44,10 +45,7 @@ def app():
 
     # Initialize circular domain with random seeded species
     def reset_simulation():
-        yy, xx = np.indices((GRID, GRID))
-        center = GRID // 2
-        radius = GRID // 2 - 2
-        mask = (xx - center) ** 2 + (yy - center) ** 2 <= radius ** 2
+        mask = utils.create_circular_mask(GRID)
 
         grid = np.zeros((GRID, GRID), dtype=int)
         rand = np.random.rand(GRID, GRID)
@@ -115,7 +113,7 @@ def app():
         mask = st.session_state.rps_mask
 
         for _ in range(steps_per_frame):
-            # Random neighbor choice for local interactions
+            # Generate random neighbor offsets once per step
             dx = np.random.randint(-1, 2, size=(GRID, GRID))
             dy = np.random.randint(-1, 2, size=(GRID, GRID))
 
@@ -123,6 +121,7 @@ def app():
             nx = (x_indices + dx) % GRID
             ny = (y_indices + dy) % GRID
 
+            # Pre-compute masks and random values
             valid = mask & mask[nx, ny]
             rand_spread = np.random.rand(GRID, GRID)
             rand_eat = np.random.rand(GRID, GRID)
@@ -140,12 +139,14 @@ def app():
             grid[repro] = neighbor[repro]
 
             # Dominance cycles (Toxic → Sensitive → Resistive → Toxic)
+            # Combine conditions to avoid redundant masking
             eat_mask = valid & (rand_eat < eat_prob)
 
             toxic_kill = eat_mask & (neighbor == RED) & (self_state == GREEN)
             sensitive_win = eat_mask & (neighbor == GREEN) & (self_state == BLUE)
             resistive_win = eat_mask & (neighbor == BLUE) & (self_state == RED)
 
+            # Apply all replacements at once
             replaced = toxic_kill | sensitive_win | resistive_win
             grid[replaced] = neighbor[replaced]
 
@@ -153,7 +154,7 @@ def app():
 
         st.session_state.rps_time += steps_per_frame
 
-        # Track population dynamics
+        # Track population dynamics (vectorized counting)
         c_red = np.sum(grid == RED)
         c_blue = np.sum(grid == BLUE)
         c_green = np.sum(grid == GREEN)

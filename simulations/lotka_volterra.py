@@ -2,6 +2,7 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import altair as alt
+from . import utils
 
 
 def app():
@@ -32,13 +33,7 @@ def app():
 
     def laplacian(arr):
         """Discrete 5-point Laplacian for isotropic diffusion."""
-        lap = np.zeros_like(arr)
-        lap[1:-1, 1:-1] = (
-            arr[:-2, 1:-1] + arr[2:, 1:-1] +
-            arr[1:-1, :-2] + arr[1:-1, 2:] -
-            4 * arr[1:-1, 1:-1]
-        )
-        return lap
+        return utils.laplacian(arr)
 
     def seed_colonies(mask, count, radius, intensity):
         """Random circular colonies seeded inside the dish."""
@@ -59,8 +54,7 @@ def app():
 
     def reset():
         """Initialize circular petri dish with seeded prey, predator, nutrient."""
-        y, x = np.ogrid[-grid / 2:grid / 2, -grid / 2:grid / 2]
-        mask = x ** 2 + y ** 2 <= (grid / 2 - 2) ** 2
+        mask = utils.create_circular_mask(grid)
 
         np.random.seed(42)
         prey = seed_colonies(mask, 20, 5, 0.5)

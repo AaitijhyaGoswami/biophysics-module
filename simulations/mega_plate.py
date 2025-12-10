@@ -28,18 +28,17 @@ def app():
 
     def reset_simulation():
         # Build concentric antibiotic zones: center drug-free, middle low, outer high
+        # Vectorized computation for better performance
+        y, x = np.ogrid[:SIZE, :SIZE]
+        dist = np.sqrt((y - CENTER) ** 2 + (x - CENTER) ** 2)
+        
+        # Initialize with out-of-bounds value
         ab_map = np.ones((SIZE, SIZE)) * 99
-        for r in range(SIZE):
-            for c in range(SIZE):
-                dist = np.sqrt((r - CENTER) ** 2 + (c - CENTER) ** 2)
-                if dist > RADIUS:
-                    ab_map[r, c] = 99
-                elif dist < RADIUS / 3:
-                    ab_map[r, c] = 0
-                elif dist < 2 * RADIUS / 3:
-                    ab_map[r, c] = 1
-                else:
-                    ab_map[r, c] = 2
+        
+        # Apply concentric zones using vectorized comparisons
+        ab_map[dist <= RADIUS] = 2  # Outer zone
+        ab_map[dist < 2 * RADIUS / 3] = 1  # Middle zone
+        ab_map[dist < RADIUS / 3] = 0  # Center zone
 
         bac_grid = np.zeros((SIZE, SIZE), dtype=int)
         bac_grid[CENTER - 1:CENTER + 2, CENTER - 1:CENTER + 2] = 1  # Wildtype seed
@@ -102,41 +101,46 @@ def app():
         for _ in range(STEPS_PER_FRAME):
             new_grid = bacteria_grid.copy()
 
+            # Get all occupied cells at once
             rows, cols = np.where(bacteria_grid > 0)
-            if len(rows) > 0:
-                idx = np.arange(len(rows))
-                np.random.shuffle(idx)
+            if len(rows) == 0:
+                continue
+                
+            # Shuffle indices for random processing order
+            idx = np.arange(len(rows))
+            np.random.shuffle(idx)
 
-                for i in idx:
-                    r, c = rows[i], cols[i]
-                    res_level = bacteria_grid[r, c]
+            for i in idx:
+                r, c = rows[i], cols[i]
+                res_level = bacteria_grid[r, c]
 
-                    # Survival constraint: resistance must exceed local antibiotic level
-                    if (res_level - 1) < antibiotic_map[r, c]:
-                        new_grid[r, c] = 0
-                        continue
+                # Survival constraint: resistance must exceed local antibiotic level
+                if (res_level - 1) < antibiotic_map[r, c]:
+                    new_grid[r, c] = 0
+                    continue
 
-                    # Reproduction into available neighbors
-                    neighbors = [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
-                    np.random.shuffle(neighbors)
+                # Reproduction into available neighbors
+                neighbors = [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]
+                np.random.shuffle(neighbors)
 
-                    for nr, nc in neighbors:
-                        if 0 <= nr < SIZE and 0 <= nc < SIZE:
-                            if bacteria_grid[nr, nc] == 0 and antibiotic_map[nr, nc] != 99:
-                                if np.random.random() < REGROW_PROB:
-                                    child = res_level
+                for nr, nc in neighbors:
+                    if 0 <= nr < SIZE and 0 <= nc < SIZE:
+                        if bacteria_grid[nr, nc] == 0 and antibiotic_map[nr, nc] != 99:
+                            if np.random.random() < REGROW_PROB:
+                                child = res_level
 
-                                    # Mutation: increases resistance level by 1
-                                    if np.random.random() < MUTATION_RATE:
-                                        child = min(MAX_RES_LEVEL, child + 1)
+                                # Mutation: increases resistance level by 1
+                                if np.random.random() < MUTATION_RATE:
+                                    child = min(MAX_RES_LEVEL, child + 1)
 
-                                    # Child survives only if resistance sufficient
-                                    if (child - 1) >= antibiotic_map[nr, nc]:
-                                        new_grid[nr, nc] = child
+                                # Child survives only if resistance sufficient
+                                if (child - 1) >= antibiotic_map[nr, nc]:
+                                    new_grid[nr, nc] = child
 
             bacteria_grid[:] = new_grid
             st.session_state.mp_time += 0.1
 
+            # Sample population statistics (not every iteration for better performance)
             total = np.sum(bacteria_grid > 0)
             c1 = np.sum(bacteria_grid == 1)
             c2 = np.sum(bacteria_grid == 2)
