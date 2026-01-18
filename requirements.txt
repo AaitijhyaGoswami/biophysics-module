@@ -2,3 +2,5 @@ streamlit
 numpy
 matplotlib
 scipy
+pandas 
+altair
