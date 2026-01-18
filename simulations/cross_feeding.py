@@ -2,21 +2,12 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import altair as alt
+from . import utils
 
 def app():
     # CONSTANTS
     D_DIFFUSION = 0.15
     DECAY_RATE = 0.05
-
-    def laplacian(field):
-        # simple 2D laplacian, periodic BCs
-        return (
-            np.roll(field, 1, axis=0) +
-            np.roll(field, -1, axis=0) +
-            np.roll(field, 1, axis=1) +
-            np.roll(field, -1, axis=1) -
-            4 * field
-        )
 
     st.title("Chemically Mediated Cross-freeding")
     st.markdown("""
@@ -89,9 +80,9 @@ def app():
         if p['prod_x'] > 0: X += p['prod_x'] * mask_A
         if p['prod_y'] > 0: Y += p['prod_y'] * mask_B
 
-        # diffusion + decay
-        X += D_DIFFUSION * laplacian(X)
-        Y += D_DIFFUSION * laplacian(Y)
+        # diffusion + decay using shared laplacian
+        X += D_DIFFUSION * utils.laplacian(X)
+        Y += D_DIFFUSION * utils.laplacian(Y)
 
         consumption_factor = 0.2 / (p['growth_b'] + 0.2)
         X -= (DECAY_RATE * X) + mask_B * X * consumption_factor
@@ -100,6 +91,7 @@ def app():
         X = np.clip(X, 0, 10)
         Y = np.clip(Y, 0, 10)
 
+        # Pre-generate random values for this step
         rand_birth = np.random.random(grid.shape)
         rand_death = np.random.random(grid.shape)
 
@@ -110,8 +102,9 @@ def app():
         # B death
         grid[mask_B & (rand_death < p['death_b'])] = 0
 
-        # pick neighbor
-        sx, sy = [(0,1),(0,-1),(1,0),(-1,0)][np.random.randint(0,4)]
+        # Pick one neighbor direction (more efficient than recalculating per cell)
+        directions = [(0,1),(0,-1),(1,0),(-1,0)]
+        sx, sy = directions[np.random.randint(0, 4)]
         nbr = np.roll(np.roll(grid, sx, axis=0), sy, axis=1)
 
         empty = (grid == 0)

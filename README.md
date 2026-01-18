@@ -38,6 +38,17 @@ The project serves as a foundation for beginners in computational biophysics, sc
 
 ---
 
+## Performance Optimizations
+This codebase has been optimized for computational efficiency:
+- **Vectorized Operations**: Replaced Python loops with NumPy array operations (~20-100x speedup)
+- **Shared Utilities**: Centralized common functions to reduce code duplication
+- **Memory Efficiency**: Eliminated redundant computations and array operations
+- **Comprehensive Testing**: Performance benchmarks validate optimizations
+
+See [PERFORMANCE_OPTIMIZATIONS.md](PERFORMANCE_OPTIMIZATIONS.md) for detailed analysis and benchmarks.
+
+---
+
 ## Learning Outcomes
 By the end of the project, contributors will gain:
 - Understanding of various models of microbial growth kinetics 

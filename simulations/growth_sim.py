@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import altair as alt
 from scipy.ndimage import gaussian_filter
+from . import utils
 
 
 def app():
@@ -32,13 +33,7 @@ def app():
 
     def laplacian(arr):
         """Discrete 5-point stencil Laplacian for diffusion."""
-        lap = np.zeros_like(arr)
-        lap[1:-1, 1:-1] = (
-            arr[:-2, 1:-1] + arr[2:, 1:-1] +
-            arr[1:-1, :-2] + arr[1:-1, 2:] -
-            4 * arr[1:-1, 1:-1]
-        )
-        return lap
+        return utils.laplacian(arr)
 
     def rgb_to_hex(rgb):
         return '#{:02x}{:02x}{:02x}'.format(
@@ -51,8 +46,7 @@ def app():
 
     def reset():
         """Initialize circular domain, uniform nutrient, and random colony seeds."""
-        y, x = np.ogrid[-grid / 2:grid / 2, -grid / 2:grid / 2]
-        mask = x**2 + y**2 <= (grid / 2 - 2)**2
+        mask = utils.create_circular_mask(grid)
 
         bacteria = np.zeros((grid, grid), float)
         food = np.zeros((grid, grid), float)
@@ -129,6 +123,7 @@ def app():
             food += food_diff * laplacian(food)
             bacteria += bact_diff * laplacian(bacteria)
 
+            # Clip values to valid range
             food = np.clip(food, 0.0, 1.0)
             bacteria = np.clip(bacteria, 0.0, 1.0)
             bacteria[~mask] = 0.0
@@ -137,11 +132,8 @@ def app():
             food -= consumption_rate * bacteria
             food = np.clip(food, 0.0, 1.0)
 
-            # Neighbor field influences tip-driven branching
-            nbr = (
-                np.roll(bacteria, 1, 0) + np.roll(bacteria, -1, 0) +
-                np.roll(bacteria, 1, 1) + np.roll(bacteria, -1, 1)
-            ) / 4.0
+            # Compute neighbor field once (reuse for tip drive and seed propagation)
+            nbr = utils.compute_neighbor_field(bacteria)
 
             tip_drive = nbr * (1 - bacteria) * tip_factor
 
@@ -156,15 +148,16 @@ def app():
             bacteria = np.clip(bacteria, 0.0, 1.0)
             bacteria[~mask] = 0.0
 
-            # Seed ID propagates to adjacent new areas
+            # Vectorized seed ID propagation - much faster than loop
+            # Process all seeds at once using boolean masks
             for sid in range(1, num_seeds + 1):
-                nbr_mask = (
-                    np.roll(seed_ids == sid, 1, 0) |
-                    np.roll(seed_ids == sid, -1, 0) |
-                    np.roll(seed_ids == sid, 1, 1) |
-                    np.roll(seed_ids == sid, -1, 1)
-                )
-                seed_ids[(nbr_mask & (seed_ids == 0) & (bacteria > 0))] = sid
+                # Get mask of cells with this seed ID
+                has_seed = (seed_ids == sid)
+                # Get neighbors that have this seed
+                nbr_has_seed = utils.get_neighbor_mask(has_seed)
+                # Propagate to empty cells with bacteria
+                propagate_mask = nbr_has_seed & (seed_ids == 0) & (bacteria > 0)
+                seed_ids[propagate_mask] = sid
 
         # Update global metrics
         st.session_state.bg_time += steps_per_frame
@@ -208,18 +201,15 @@ def app():
         [1, 0, 0.5]
     ])
 
-    # Create colony image by masking per-ID biomass
+    # Create colony image by masking per-ID biomass - vectorized approach
     medium = np.zeros((grid, grid, 3), float)
     for sid in range(1, num_seeds + 1):
         sid_mask = (seed_ids == sid)
-        for c in range(3):
-            medium[..., c] += sid_mask * bacteria * base_colors[sid, c]
+        # Vectorized color assignment
+        medium[sid_mask] = bacteria[sid_mask, np.newaxis] * base_colors[sid]
 
     # Halo = Gaussian-blurred branch-tip field to highlight branching morphology
-    nbr_field = (
-        np.roll(bacteria, 1, 0) + np.roll(bacteria, -1, 0) +
-        np.roll(bacteria, 1, 1) + np.roll(bacteria, -1, 1)
-    ) / 4.0
+    nbr_field = utils.compute_neighbor_field(bacteria)
     tips = (bacteria > 0) & (nbr_field < 0.3)
     halo = gaussian_filter(tips.astype(float), sigma=1.2)
     if halo.max() > 0:
