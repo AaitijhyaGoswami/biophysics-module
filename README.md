@@ -39,7 +39,7 @@ Simulates the spatiotemporal dynamics between a Prey species (e.g., *E. coli*) a
 **Governing Equations:**
 $$\frac{\partial P}{\partial t} = D_p \nabla^2 P + \mu P N - \beta P Q$$
 $$\frac{\partial Q}{\partial t} = D_q \nabla^2 Q + \gamma \beta P Q - \delta Q$$
-*(Where $$P$$ is Prey, $$Q$$ is Predator, $N$ is Nutrient)*
+*(Where P is Prey, Q is Predator, N is Nutrient)*
 
 ### 3. The MEGA Plate Experiment
 **Bio-Physical Concept:** Evolutionary Rescue & Fitness Landscapes  
