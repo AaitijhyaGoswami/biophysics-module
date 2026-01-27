@@ -110,9 +110,9 @@ biophysics-module/
 │   └── cross_feed.py    # Module 5: Cross-Feeding
 ├── requirements.txt     # Python dependencies
 └── README.md            # Project documentation
-
 ---
 
+---
 ## 🤝 Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request if you have ideas for new biological models or optimization improvements.
