@@ -1,4 +1,4 @@
-# 🧬 Computational Ecology Simulation Suite
+# 🧬 Computational Biophysics Simulation Suite
 ### Reaction-Diffusion & Spatial Dynamics Simulations
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
@@ -101,15 +101,16 @@ This creates complex "chasing" patterns where partners must stay close to feed b
 
 ```text
 biophysics-module/
-├── app.py               # Entry point for the Streamlit app
-├── modules/
-│   ├── colony.py        # Module 1: Multi-Colony Competition
-│   ├── lotka.py         # Module 2: Predator-Prey
-│   ├── mega_plate.py    # Module 3: Evolutionary Rescue
-│   ├── rps.py           # Module 4: Cyclic Dominance
-│   └── cross_feed.py    # Module 5: Cross-Feeding
-├── requirements.txt     # Python dependencies
-└── README.md            # Project documentation
+├──.devcontainer                  # config directory
+├── app.py                        # Entry point for the Streamlit app
+├── simulations/
+│   ├── growth_sim.py             # Module 1: Multi-Colony Competition
+│   ├── lotka_volterra.py         # Module 2: Predator-Prey
+│   ├── mega_plate.py             # Module 3: Evolutionary Rescue
+│   ├── rps_sim.py                # Module 4: Cyclic Dominance
+│   └── cross_feeding.py          # Module 5: Cross-Feeding
+├── requirements.txt              # Python dependencies
+└── README.md                     # Project documentation
 ```
 ---
 
