@@ -72,7 +72,7 @@ This creates complex "chasing" patterns where partners must stay close to feed b
 
 * **Language:** Python 3.9+
 * **Core Logic:** `NumPy` (Vectorized Finite Difference Method, Monte Carlo steps)
-* **Visualization:** `Streamlit` (UI), `Altair` (Real-time Analytics), `Matplotlib`
+* **Visualization:** `Streamlit` (UI),`Pandas`, `Altair` (Real-time Analytics), `Matplotlib` (Static Run)
 * **Image Processing:** `SciPy` (Gaussian filters for chemical diffusion halos)
 
 ---
