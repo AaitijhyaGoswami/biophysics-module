@@ -37,6 +37,7 @@ Modeled as a consumption-diffusion system where biomass growth ($dB/dt$) is coup
 Simulates the spatiotemporal dynamics between a Prey species (e.g., *E. coli*) and a Predator species (e.g., *Bdellovibrio*) in a finite environment. Unlike standard ODE models, this spatial implementation reveals **traveling waves** and **phase shifts** (Prey peaks $\to$ Predator peaks $\to$ Collapse).
 
 **Governing Equations:**
+
 $$\frac{\partial P}{\partial t} = D_p \nabla^2 P + \mu P N - \beta P Q$$
 
 $$\frac{\partial Q}{\partial t} = D_q \nabla^2 Q + \gamma \beta P Q - \delta Q$$
