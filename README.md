@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-Active-success)
 
-> **Databased Fall of Code 2025** > **Authors:** Aaitijhya Goswami & Ritaja Dutta
+> **Authors:** ![Aaitijhya Goswami](https://www.linkedin.com/in/aaitijhya-goswami-553940280/) & ![Ritaja Dutta](https://www.linkedin.com/in/ritaja-d-58ba3a367/)
 
 ---
 
@@ -132,6 +132,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ---
 
 <p align="center">
-  Built with ❤️ for Science | Databased Fall of Code 2025
+  Built with ❤️ for Physics and Biology
 </p>
 
