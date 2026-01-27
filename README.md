@@ -1,4 +1,4 @@
-# 🧬 Computational Ecology Suite
+# 🧬 Computational Ecology Simulation Suite
 ### Reaction-Diffusion & Spatial Dynamics Simulations
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-Active-success)
 
-> **Authors:** ![Aaitijhya Goswami](https://www.linkedin.com/in/aaitijhya-goswami-553940280/) & ![Ritaja Dutta](https://www.linkedin.com/in/ritaja-d-58ba3a367/)
+> **Authors:** [Aaitijhya Goswami](https://www.linkedin.com/in/aaitijhya-goswami-553940280/) & [Ritaja Dutta](https://www.linkedin.com/in/ritaja-d-58ba3a367/)
 
 ---
 
