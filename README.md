@@ -1,5 +1,4 @@
-# Computational Modeling of Bacterial Colony Growth  
-*DFOC Research Project (IISc)*
+# Computational Modeling of Ecological Growth and Inter-species Interaction
 
 ## Overview
 This project develops a modular, simulation-driven framework for modeling bacterial population dynamics in 2D environments. Using a combination of deterministic growth models and spatially explicit grid-based simulations, the project aims to reproduce key emergent behaviors of microbial colonies such as exponential growth, nutrient-driven saturation, and diffusion-limited pattern formation.
@@ -35,6 +34,9 @@ The project serves as a foundation for beginners in computational biophysics, sc
 - Matplotlib (for static run locally)
 - SciPy
 - Streamlit
+- Pandas
+- Plotly
+- Altair
 
 ---
 
