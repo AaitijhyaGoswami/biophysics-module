@@ -5,9 +5,7 @@ import altair as alt
 
 alt.data_transformers.disable_max_rows()
 
-# ======================================================
-# Phase map coarse simulator
-# ======================================================
+# ================= phase map helper =================
 def run_coarse(nu, p, steps=120, size=60):
     CENTER = size // 2
     RADIUS = size // 2 - 4
@@ -56,9 +54,7 @@ def run_coarse(nu, p, steps=120, size=60):
     return 1
 
 
-# ======================================================
-# Main app
-# ======================================================
+# ================= main app =================
 def app():
     st.title("The MEGA Plate Experiment")
     st.subheader("A Spatial Reaction–Selection–Mutation Model")
@@ -152,9 +148,14 @@ def app():
 
     with col_stats:
         st.markdown("### Figure 2 — Evolutionary Dynamics")
-        g1 = st.empty()
-        g2 = st.empty()
-        g3 = st.empty()
+
+        fig2_row1 = st.container()
+        fig2_row2 = st.container()
+        fig2_row3 = st.container()
+
+        g1 = fig2_row1.empty()
+        g2 = fig2_row2.empty()
+        g3 = fig2_row3.empty()
 
     run_sim = st.toggle("Run Simulation", value=False)
 
