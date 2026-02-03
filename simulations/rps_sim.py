@@ -110,6 +110,8 @@ def app():
 
     run_sim = st.toggle("Run Simulation", value=False)
 
+    st.markdown("**RGB legend:** 🔴 Toxic | 🟢 Sensitive | 🔵 Resistive")
+
     # ---------------- SIMULATION ----------------
     if run_sim:
         grid = st.session_state.rps_grid
@@ -194,7 +196,13 @@ def app():
             x='Time', y='Fraction', color='Strain'
         ).properties(height=200)
         chart_fracs.altair_chart(chart_f, use_container_width=True)
+        st.markdown("---")
+        st.markdown(
+        "**Numerics:** stochastic lattice updates, nearest-neighbor sampling, Bernoulli reproduction, cyclic dominance rules, circular domain mask."
+        )
+
 
 
 if __name__ == "__main__":
     app()
+
