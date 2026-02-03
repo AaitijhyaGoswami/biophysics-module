@@ -2,12 +2,11 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import altair as alt
-import plotly.graph_objects as go
+import plotly.graph_objects as go  # <--- Essential Import
 from scipy.ndimage import gaussian_filter
-import uuid
 
 def app():
-    # --- Page Header ---
+    # --- Header ---
     st.markdown("### 🧫 Bacterial Colony Growth (Stochastic)")
     st.markdown("""
     **Model:** Reaction-Diffusion with Monod Kinetics & Stochastic Noise.  
@@ -15,7 +14,7 @@ def app():
     """)
 
     # -------------------------------------------------------------------------
-    # SIDEBAR PARAMETERS
+    # 1. PARAMETERS (Sidebar)
     # -------------------------------------------------------------------------
     st.sidebar.subheader("Physics Parameters")
     food_diff = st.sidebar.slider("Food Diffusion (D_n)", 0.0, 0.02, 0.008, format="%.4f")
@@ -33,9 +32,10 @@ def app():
     steps_per_frame = st.sidebar.slider("Simulation Speed", 1, 100, 40)
 
     # -------------------------------------------------------------------------
-    # HELPER FUNCTIONS
+    # 2. HELPER FUNCTIONS
     # -------------------------------------------------------------------------
     def laplacian(arr):
+        """Discrete 5-point stencil Laplacian for diffusion."""
         lap = np.zeros_like(arr)
         lap[1:-1, 1:-1] = (
             arr[:-2, 1:-1] + arr[2:, 1:-1] +
@@ -50,7 +50,7 @@ def app():
         )
 
     # -------------------------------------------------------------------------
-    # INITIALIZATION
+    # 3. INITIALIZATION
     # -------------------------------------------------------------------------
     if "bg_bacteria" not in st.session_state:
         st.session_state.bg_initialized = False
@@ -102,11 +102,11 @@ def app():
         st.rerun()
 
     # -------------------------------------------------------------------------
-    # LAYOUT GRID
+    # 4. LAYOUT SETUP (2x2 Grid)
     # -------------------------------------------------------------------------
     st.markdown("---")
     
-    # Define Layout
+    # Create the grid containers
     row1_col1, row1_col2 = st.columns(2)
     row2_col1, row2_col2 = st.columns(2)
 
@@ -116,7 +116,7 @@ def app():
 
     with row1_col2:
         st.markdown("**2. 3D Biomass Terrain**")
-        # Initialize a container for Plotly
+        # Explicit placeholder for Plotly
         ph_3d = st.empty()
 
     with row2_col1:
@@ -129,7 +129,7 @@ def app():
 
     st.markdown("---")
     
-    # Analytics
+    # Analytics Charts
     col_g1, col_g2 = st.columns(2)
     ph_global = col_g1.empty()
     ph_local = col_g2.empty()
@@ -137,7 +137,7 @@ def app():
     run = st.toggle("▶️ Run Simulation", value=False)
 
     # -------------------------------------------------------------------------
-    # MAIN LOOP
+    # 5. MAIN SIMULATION LOOP
     # -------------------------------------------------------------------------
     if run:
         bacteria = st.session_state.bg_bacteria
@@ -191,14 +191,14 @@ def app():
         st.rerun()
 
     # -------------------------------------------------------------------------
-    # RENDERING LOGIC (Always Runs)
+    # 6. RENDERING (This runs every frame)
     # -------------------------------------------------------------------------
     bacteria = st.session_state.bg_bacteria
     food = st.session_state.bg_food
     seed_ids = st.session_state.bg_seed_ids
     mask = st.session_state.bg_mask
 
-    # 1. Colony Morphology
+    # --- A. Colony Image ---
     base_colors = np.array([
         [0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0],
         [1, 0, 1], [0, 1, 1], [0.5, 0.5, 0], [0.5, 0, 0.5],
@@ -220,24 +220,24 @@ def app():
     medium[~mask] = 0.0
     ph_colony.image(medium, clamp=True, use_column_width=True)
 
-    # 2. 3D Terrain Render (DEBUGGED SECTION)
-    # Downsample for speed
+    # --- B. 3D Terrain Render (The Fix) ---
+    # 1. Downsample for speed (300x300 is too heavy for live 3D)
     stride = 3
     z_data = bacteria[::stride, ::stride]
 
-    # Create figure
+    # 2. Create Surface
     fig_3d = go.Figure(data=[go.Surface(
         z=z_data,
         colorscale='Viridis',
         cmin=0, cmax=1.0,
-        opacity=1.0,
-        showscale=False
+        showscale=False,  # Hide colorbar to save space
+        opacity=1.0       # Force opacity
     )])
     
+    # 3. Clean Layout
     fig_3d.update_layout(
-        title="",
-        autosize=True,
         margin=dict(l=0, r=0, b=0, t=0),
+        height=300,
         scene=dict(
             xaxis=dict(visible=False),
             yaxis=dict(visible=False),
@@ -246,28 +246,30 @@ def app():
             camera=dict(eye=dict(x=1.5, y=1.5, z=1.2))
         ),
         paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        height=300
+        plot_bgcolor='rgba(0,0,0,0)'
     )
     
-    # Use a unique key to force redraw
-    unique_key = f"3d_plot_{st.session_state.bg_time}_{uuid.uuid4()}"
-    ph_3d.plotly_chart(fig_3d, use_container_width=True, key=unique_key)
+    # 4. CRITICAL FIX: The 'key' ensures Streamlit redraws the chart every frame.
+    # Without this, the chart freezes.
+    ph_3d.plotly_chart(
+        fig_3d, 
+        use_container_width=True, 
+        key=f"3d_plot_{st.session_state.bg_time}"
+    )
 
-    # 3. Nutrient Field
+    # --- C. Nutrient & Biomass Images ---
     nutr_img = np.zeros((grid_size, grid_size, 3))
     nutr_img[..., 1] = food
     nutr_img[~mask] = 0.0
     ph_nutrient.image(nutr_img, clamp=True, use_column_width=True)
 
-    # 4. Biomass Density
     bio_img = np.zeros((grid_size, grid_size, 3))
     bio_img[..., 0] = bacteria
     bio_img[..., 2] = bacteria * 0.5
     bio_img[~mask] = 0.0
     ph_biomass.image(bio_img, clamp=True, use_column_width=True)
 
-    # Analytics
+    # --- D. Analytics ---
     if st.session_state.bg_pop_history:
         df_global = pd.DataFrame({
             "Time": st.session_state.bg_hist_time,
