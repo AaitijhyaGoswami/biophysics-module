@@ -102,11 +102,6 @@ if page == "Home":
         
         st.info("👈 **Select a simulation from the sidebar to begin.**")
 
-    with col2:
-        st.markdown("### Project Status")
-        st.success("✅ **Simulations Live**")
-        st.warning("📝 **Reports In Progress**")
-        st.write("Full theoretical derivations and research reports are currently being drafted.")
 
 else:
     # Run the selected simulation module
