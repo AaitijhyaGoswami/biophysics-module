@@ -36,7 +36,7 @@ except ImportError:
 
 try:
     from simulations import rps_sim
-    modules["Rock-Paper-Scissors"] = rps_sim
+    modules["Cyclic Dominance"] = rps_sim
 except ImportError:
     pass
 
