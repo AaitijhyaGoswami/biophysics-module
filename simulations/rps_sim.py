@@ -18,23 +18,17 @@ def app():
     st.markdown("### Governing Equations")
 
     st.latex(r"""
-    \frac{\partial S_R}{\partial t} = D_R \nabla^2 S_R + \sigma_R S_R (1 - S_R) - \beta S_R S_G
-    """)
-    st.latex(r"""
-    \frac{\partial S_G}{\partial t} = D_G \nabla^2 S_G + \sigma_G S_G (1 - S_G) - \beta S_G S_B
-    """)
-    st.latex(r"""
-    \frac{\partial S_B}{\partial t} = D_B \nabla^2 S_B + \sigma_B S_B (1 - S_B) - \beta S_B S_R
+    \frac{\partial S_i}{\partial t} = D_i \nabla^2 S_i + \sigma_i S_i (1 - S_i) - \beta S_i S_{i+1}, \quad i \in \{R, G, B\}, \; S_{i+3} = S_i
     """)
 
     st.latex(r"""
     \begin{aligned}
-    S_R(x, y, t) &:\ \text{Density of toxic strain (R)} \\
-    S_G(x, y, t) &:\ \text{Density of sensitive strain (G)} \\
-    S_B(x, y, t) &:\ \text{Density of resistive strain (B)} \\
-    D_R, D_G, D_B &:\ \text{Diffusion coefficients for R, G, B} \\
-    \sigma_R, \sigma_G, \sigma_B &:\ \text{Growth (reproduction) rates of R, G, B} \\
-    \beta &:\ \text{Interaction (kill) probability}
+    S_i(x,y,t) &:\ \text{Fraction of species } i \text{ at site } (x, y) \\
+    R, G, B &:\ \text{Red (toxic), Green (sensitive), Blue (resistive) strains} \\
+    D_i &:\ \text{Diffusion coefficient of species } i \\
+    \sigma_i &:\ \text{Reproduction rate of species } i \\
+    \beta &:\ \text{Interaction (kill) rate between species} \\
+    i+1 &:\ \text{Cyclic succession rule } (R \to G, \; G \to B, \; B \to R)
     \end{aligned}
     """)
 
