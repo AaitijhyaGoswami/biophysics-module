@@ -78,8 +78,6 @@ if page == "Home":
     **statistical physics** and **ecological modeling**. The tools and visualizations aim to provide insight into
     complex biological dynamics using simplified mathematical models. These modules represent an integration
     of stochastic and deterministic principles to explore emergent behaviors of individual species and populations.
-
-    **Select any of the available simulations from the sidebar to explore.**
     """)
 
     st.markdown("#### The Modules")
@@ -87,7 +85,7 @@ if page == "Home":
 
     # Abstracts, examples, and applications for each module
     st.markdown("""
-    ### **1. Bacterial Growth Model**
+    ## **1. Bacterial Growth Model**
     - **Abstract:** This model simulates *reaction-diffusion systems with stochastic noise*, showing bacterial colony growth and the interplay between nutrient availability and diffusion-limited aggregation. The results highlight phenomena such as branching and dendritic growth patterns.
     - **Applications:**  
         - Modeling biofilm formation and bacterial growth patterns.  
@@ -97,7 +95,7 @@ if page == "Home":
     """)
 
     st.markdown("""
-    ### **2. Lotka-Volterra Ecosystem Dynamics**
+    ## **2. Lotka-Volterra Ecosystem Dynamics**
     - **Abstract:** The Lotka-Volterra model uses coupled differential equations to represent predator-prey 
       interactions on a spatial grid. These simulations go beyond traditional ODEs to incorporate 
       spatial effects, revealing complex phase-space dynamics and oscillatory behaviors.
@@ -108,7 +106,7 @@ if page == "Home":
     """)
 
     st.markdown("""
-    ### **3. MEGA Plate Evolution**
+    ## **3. MEGA Plate Evolution**
     - **Abstract:** Based on the famous *MEGA Plate Experiment* by the Kishony Lab, this model captures 
       *antibiotic resistance evolution under spatially distributed drug gradients*. Spatial dynamics, stochastic
       mutation rates, and stepwise resistance development are simulated to illustrate how bacteria adapt 
@@ -121,7 +119,7 @@ if page == "Home":
     """)
 
     st.markdown("""
-    ### **4. Cyclic Dominance**
+    ## **4. Cyclic Dominance**
     - **Abstract:** This module captures non-transitive interactions (e.g., *A beats B, B beats C, C beats A*),
       typical of ecosystems characterized by cyclic dominance. The model uses stochastic spatial lattice 
       updates to reveal the emergence of *spiral waves* and the preservation of biodiversity via non-transitive
@@ -134,7 +132,7 @@ if page == "Home":
     """)
 
     st.markdown("""
-    ### **5. Cross-Feeding (Syntrophy)**
+    ## **5. Cross-Feeding (Syntrophy)**
     - **Abstract:** Cross-feeding, or metabolic interdependence, is a phenomenon where one organism produces a 
       resource that another consumes. This simulation illustrates spatiotemporal dynamics of producers (A) 
       secreting a nutrient (X), and consumers (B) that consume X while producing a toxin (Y) that affects A. The 
