@@ -47,7 +47,49 @@ def run_coarse(mu, p, steps=120, size=60):
 # ---------- main app ----------
 def app():
     st.title("The MEGA Plate Experiment")
-    st.subheader("Spatial Reaction–Selection–Mutation Model")
+    st.subheader("A Spatial Reaction–Selection–Mutation Model")
+
+    st.markdown("""
+    This simulator models **stepwise antibiotic resistance evolution**
+    across spatial drug gradients using discrete stochastic dynamics.
+    Populations expand outward, mutate, and are selectively filtered by
+    local antibiotic concentrations.
+    """)
+
+    # ---------------- THEORY ----------------
+    st.markdown("## Mathematical Model")
+
+    st.latex(r"B_i(x,y,t)\in\{0,1\},\quad i\in\{1,2,3\}")
+    st.latex(r"A(x,y)\in\{0,1,2\}")
+
+    st.latex(r"""
+    B_i(x,y,t+1)=
+    \begin{cases}
+    0, & i-1<A(x,y),\\
+    B_i(x,y,t), & \text{otherwise}.
+    \end{cases}
+    """)
+
+    st.latex(r"""
+    \Pr\big(B_i(x\to x',t+1)=1\big)=p
+    """)
+
+    st.latex(r"""
+    \Pr(i\to i+1)=\mu
+    """)
+
+    st.latex(r"""
+    i-1\ge A(x') \quad \text{(selection constraint)}
+    """)
+
+    st.latex(r"""
+    \begin{aligned}
+    B_i &: \text{bacteria with resistance level } i\\
+    A(x) &: \text{local antibiotic field}\\
+    p &: \text{reproduction probability}\\
+    \mu &: \text{mutation probability}
+    \end{aligned}
+    """)
 
     # ---------------- sidebar ----------------
     st.sidebar.subheader("Evolution Parameters")
@@ -103,7 +145,7 @@ def app():
         plate_placeholder = st.empty()
 
     with col_stats:
-        st.markdown("### Figure 2 — Population & Phase Dynamics")
+        st.markdown("### Figure 2 — Evolutionary Dynamics")
         chart_total = st.empty()
         chart_frac = st.empty()
         phase_placeholder = st.empty()
