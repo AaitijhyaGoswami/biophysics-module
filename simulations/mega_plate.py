@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import altair as alt
 
+alt.data_transformers.disable_max_rows()
+
 # ======================================================
 # Phase map coarse simulator
 # ======================================================
@@ -59,12 +61,11 @@ def run_coarse(nu, p, steps=120, size=60):
 # ======================================================
 def app():
     st.title("The MEGA Plate Experiment")
-    st.subheader("Spatial Reaction–Selection–Mutation Model")
+    st.subheader("A Spatial Reaction–Selection–Mutation Model")
 
     st.markdown("""
     This simulator models **stepwise antibiotic resistance evolution**
-    across spatial drug gradients. Populations expand, mutate, and are
-    filtered by local antibiotic concentration.
+    across spatial drug gradients using discrete stochastic dynamics.
     """)
 
     # ---------------- Mathematical model ----------------
@@ -242,11 +243,12 @@ def app():
         df_phase = pd.DataFrame(phase, columns=["nu", "p", "state"])
 
         phase_chart = alt.Chart(df_phase).mark_rect().encode(
-            x="nu:O", y="p:O",
-            color=alt.Color("state:Q",
-                scale=alt.Scale(domain=[0, 1, 2],
-                                range=["black", "orange", "red"]),
-                legend=None)
+            x=alt.X("nu:Q", bin=alt.Bin(maxbins=10), title="Mutation rate (ν)"),
+            y=alt.Y("p:Q", bin=alt.Bin(maxbins=10), title="Growth probability (p)"),
+            color=alt.Color("state:N",
+                            scale=alt.Scale(domain=[0, 1, 2],
+                                            range=["black", "orange", "red"]),
+                            legend=None)
         ).properties(height=250)
 
         g3.altair_chart(phase_chart, use_container_width=True)
