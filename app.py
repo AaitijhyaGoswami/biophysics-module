@@ -73,7 +73,7 @@ if page == "Home":
     st.markdown("### Stochastic & Deterministic Modeling of Biological Dynamics")
     st.markdown("---")
 
-        st.markdown("""
+    st.markdown("""
         **Welcome.** This interactive dashboard facilitates the visualization of mathematical models 
         aimed at decoding complex biological systems through computational physics. Each model presented in this suite explores 
         various aspects of population dynamics, ecosystem resilience, and biophysics.
