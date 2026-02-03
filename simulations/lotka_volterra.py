@@ -8,7 +8,7 @@ def app():
     st.subheader("Reaction–Diffusion–Chemotaxis System in a Circular Domain")
 
     st.markdown("""
-    This interactive simulation solves a **coupled nonlinear PDE system**
+    This interactive simulation solves a **coupled nonlinear Lotka-Volterra PDE system**
     describing predator–prey interactions with **directed chemotactic motion**.
     Predators migrate up prey gradients, producing spiral hunting fronts
     and collapse zones.
@@ -221,3 +221,4 @@ def app():
 
 if __name__ == "__main__":
     app()
+
