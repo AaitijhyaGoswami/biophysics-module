@@ -4,7 +4,7 @@ import streamlit as st
 # PAGE CONFIGURATION
 # -------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Biophysics Suite | DFOC",
+    page_title="Biophysics Suite",
     page_icon="🧫",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -50,7 +50,6 @@ except ImportError:
 # SIDEBAR NAVIGATION
 # -------------------------------------------------------------------------
 st.sidebar.title("Biophysics Suite")
-st.sidebar.markdown("**Databased Fall of Code '25**")
 
 # Define the navigation options
 options = ["Home"] + list(modules.keys())
