@@ -73,20 +73,12 @@ if page == "Home":
     st.markdown("### Stochastic & Deterministic Modeling of Biological Dynamics")
     st.markdown("---")
 
-    col1, col2 = st.columns([2, 1])
-
-    # MAIN WELCOME MESSAGE AND ABSTRACTS
-    with col1:
         st.markdown("""
         **Welcome.** This interactive dashboard facilitates the visualization of mathematical models 
         aimed at decoding complex biological systems through computational physics. Each model presented in this suite explores 
         various aspects of population dynamics, ecosystem resilience, and biophysics.
 
-        This project was developed as part of the **Databased Fall of Code** initiative, under the mentorship 
-        of subject matter experts. The models encompass a variety of deterministic and stochastic processes 
-        that can describe biological systems.
-
-        #### Abstract:
+        #### Introduction:
         This research project addresses fundamental principles of biophysics and applies them to simulate dynamic biological systems. 
         The modules use computational methods to simulate and visualize phenomena ranging from nutrient competition to predator-prey 
         interactions. With the ability to explore spatial structures, non-linear dynamics, and stochasticity, this platform offers insights 
@@ -95,13 +87,6 @@ if page == "Home":
 
         st.info("👈 **Use the sidebar to choose a simulation module.**")
 
-    with col2:
-        # Add a scientific image or related figure
-        st.image(
-            "https://upload.wikimedia.org/wikipedia/commons/a/ae/E._coli_growth.jpg",
-            caption="Spatial visualizations of E. coli bacterial growth (Credit: Kishony Lab)",
-            use_column_width=True,
-        )
 
     st.markdown("#### Research Modules")
     st.markdown("---")
