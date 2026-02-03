@@ -4,7 +4,7 @@ import streamlit as st
 # PAGE CONFIGURATION
 # -------------------------------------------------------------------------
 st.set_page_config(
-    page_title="Computational Biophysics Suite",
+    page_title="Biophysics Suite",
     page_icon="🧫",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -55,14 +55,11 @@ options = ["Home"] + list(modules.keys())
 page = st.sidebar.radio("Select Simulation:", options)
 
 st.sidebar.markdown("---")
-st.sidebar.caption("Research Team:")
+st.sidebar.caption("Project Team:")
 st.sidebar.info(
     "**Aaitijhya Goswami**\n*Simulation & Modeling*\n\n"
     "**Ritaja Dutta**\n*Theoretical Framework*"
 )
-
-st.sidebar.markdown("---")
-st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/3/3f/Science-logo.png", use_column_width=True)
 
 # -------------------------------------------------------------------------
 # MAIN ROUTING
@@ -73,62 +70,86 @@ if page == "Home":
     st.markdown("### Stochastic & Deterministic Modeling of Biological Dynamics")
     st.markdown("---")
 
+    # Abstracts and descriptions
     st.markdown("""
-        **Welcome.** This interactive dashboard facilitates the visualization of mathematical models 
-        aimed at decoding complex biological systems through computational physics. Each model presented in this suite explores 
-        various aspects of population dynamics, ecosystem resilience, and biophysics.
+    #### Welcome
 
-        #### Introduction:
-        This research project addresses fundamental principles of biophysics and applies them to simulate dynamic biological systems. 
-        The modules use computational methods to simulate and visualize phenomena ranging from nutrient competition to predator-prey 
-        interactions. With the ability to explore spatial structures, non-linear dynamics, and stochasticity, this platform offers insights 
-        into emergent spatial and temporal patterns in biological systems.
-        """)
+    This interactive dashboard facilitates the simulation of various biological processes inspired by 
+    **statistical physics** and **ecological modeling**. The tools and visualizations aim to provide insight into
+    complex biological dynamics using simplified mathematical models. These modules represent an integration
+    of stochastic and deterministic principles to explore emergent behaviors of individual species and populations.
 
-        st.info("👈 **Use the sidebar to choose a simulation module.**")
+    **Select any of the available simulations from the sidebar to explore.**
+    """)
 
-
-    st.markdown("#### Research Modules")
+    st.markdown("#### The Modules")
     st.markdown("---")
 
-    # ABSTRACT FOR EACH MODULE
+    # Abstracts, examples, and applications for each module
     st.markdown("""
     ### **1. Bacterial Growth Model**
     - **Abstract:** This model simulates *reaction-diffusion systems with stochastic noise*, showing bacterial colony growth and the interplay between nutrient availability and diffusion-limited aggregation. The results highlight phenomena such as branching and dendritic growth patterns.
-    - **Applications:** Biofilm growth modeling, antibiotic testing, and drug resistance mechanisms.
-    - **Examples:** Formation of patterns in *Bacillus subtilis* colonies.
+    - **Applications:**  
+        - Modeling biofilm formation and bacterial growth patterns.  
+        - Studying environmental changes that affect colony formation.  
+        - Antibiotic testing and resistance.  
+    - **Examples:** Formation of patterns in *Bacillus subtilis* and *Pseudomonas aeruginosa* colonies.
     """)
 
     st.markdown("""
-    ### **2. Lotka-Volterra Dynamics**
-    - **Abstract:** The Lotka-Volterra model uses coupled differential equations to represent predator-prey interactions. It is extended here to a spatial grid to simulate more realistic ecological scenarios, including spatial segregation and oscillatory dynamics.
-    - **Applications:** Modeling predator-prey systems, ecological management, and evolutionary studies.
-    - **Examples:** Rabbits and foxes interacting in an ecosystem; plankton population dynamics in marine ecosystems.
+    ### **2. Lotka-Volterra Ecosystem Dynamics**
+    - **Abstract:** The Lotka-Volterra model uses coupled differential equations to represent predator-prey 
+      interactions on a spatial grid. These simulations go beyond traditional ODEs to incorporate 
+      spatial effects, revealing complex phase-space dynamics and oscillatory behaviors.
+    - **Applications:**  
+        - Population dynamics and predator-prey systems in ecology.  
+        - Biodiversity and conservation efforts.  
+    - **Examples:** Fox and rabbit population fluctuations, microbial interactions, or even financial market modeling.
     """)
 
     st.markdown("""
-    ### **3. MEGA Plate Evolution (Antibiotic Resistance)**
-    - **Abstract:** This module replicates the experimental setup of the MEGA-plate experiment by Kishony Lab, where *E. coli* evolve under increasing antibiotic gradients. The model reveals stepwise evolution to higher resistance levels through stochastic reproduction and mutation.
-    - **Applications:** Antibiotic resistance estimation, microbial evolution, and evolutionary biology education.
-    - **Examples:** Observation of boundary expansion of resistant strains under changing environmental conditions.
+    ### **3. MEGA Plate Evolution**
+    - **Abstract:** Based on the famous *MEGA Plate Experiment* by the Kishony Lab, this model captures 
+      *antibiotic resistance evolution under spatially distributed drug gradients*. Spatial dynamics, stochastic
+      mutation rates, and stepwise resistance development are simulated to illustrate how bacteria adapt 
+      under extreme selective pressure.
+    - **Applications:**  
+        - Antibiotic resistance research.  
+        - Evolutionary biology studies on adaptation mechanisms.  
+        - Informing pharmaceutical and healthcare strategies against resistant pathogens.  
+    - **Examples:** Expanding microbe populations in the presence of increasing drug concentrations.
     """)
 
     st.markdown("""
-    ### **4. Cyclic Dominance (Rock-Paper-Scissors)**
-    - **Abstract:** This model captures non-transitive interactions (e.g., *A beats B, B beats C, C beats A*), generating cyclic dominance patterns seen in microbial ecosystems. Spiral waves emerge from spatial lattice updates governed by stochastic birth and competition rules.
-    - **Applications:** Ecosystem modeling, community ecology, and biodiversity studies.
-    - **Examples:** Studies of colicin-producing *E. coli* strains and lizard mating strategies (*Uta stansburiana*).
+    ### **4. Cyclic Dominance**
+    - **Abstract:** This module captures non-transitive interactions (e.g., *A beats B, B beats C, C beats A*),
+      typical of ecosystems characterized by cyclic dominance. The model uses stochastic spatial lattice 
+      updates to reveal the emergence of *spiral waves* and the preservation of biodiversity via non-transitive
+      interactions.
+    - **Applications:**  
+        - Studying biodiversity in ecosystems.  
+        - Ecological modeling and population stability analysis.  
+    - **Examples:** Rock-Paper-Scissors dynamics in colicin-producing *E. coli* strains or the mating
+      strategies of *Uta stansburiana* lizards.
     """)
 
     st.markdown("""
-    ### **5. Cross-Feeding Metabolic Systems**
-    - **Abstract:** Cross-feeding is a form of syntrophy where one species produces metabolites that are consumed by another species. This simulation visualizes two populations: a producer species generating a beneficial resource and a consumer species that metabolizes it while producing a toxic byproduct.
-    - **Applications:** Studying cooperative behavior and syntrophy, biotechnology (co-culture systems), and microbial community dynamics.
-    - **Examples:** Cooperation among *Escherichia coli* strains and evolution of division of labor.
+    ### **5. Cross-Feeding (Syntrophy)**
+    - **Abstract:** Cross-feeding, or metabolic interdependence, is a phenomenon where one organism produces a 
+      resource that another consumes. This simulation illustrates spatiotemporal dynamics of producers (A) 
+      secreting a nutrient (X), and consumers (B) that consume X while producing a toxin (Y) that affects A. The 
+      interplay between nutrient production, consumption, and spatial dynamics leads to emergent behaviors 
+      such as population waves.
+    - **Applications:**  
+        - Studying metabolic interdependence in microbial ecology.  
+        - Applications in synthetic biology and bioengineering (e.g., co-culture fermentation).  
+        - Understanding nutrient cycling in ecosystem ecology.  
+    - **Examples:** Metabolic interactions in *E. coli* strains and gut microbiota community dynamics.
     """)
 
-    st.markdown("### Ready to explore?")
-    st.info("��� **Select a simulation from the sidebar to dive deeper into these fascinating systems!**")
+    # Closing message
+    st.markdown("### Ready to start?")
+    st.info("👈 **Select a simulation from the sidebar to begin exploring!**")
 
 else:
     # Run the selected simulation module
