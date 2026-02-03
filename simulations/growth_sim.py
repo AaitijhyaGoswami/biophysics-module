@@ -16,24 +16,33 @@ def app():
     """)
 
     # ---------------- THEORY ----------------
-    st.markdown("### Governing Equations")
+    # ---------------- THEORY ----------------
+      # ---------------- THEORY ----------------
+st.markdown("### Governing Equations")
 
-    st.latex(r"\frac{\partial B}{\partial t}=D_B\nabla^2B + r B(1-B)F \,\Phi(x,y,t)")
-    st.latex(r"\frac{\partial F}{\partial t}=D_F\nabla^2F - \lambda B F")
-    st.latex(r"\Phi = \eta + (1-\eta)(\bar{B} + \xi + \kappa T)")
+st.latex(r"\frac{\partial B}{\partial t}=D_B\nabla^2B + r B(1-B)F \,\Phi(x,y,t)")
+st.latex(r"\frac{\partial F}{\partial t}=D_F\nabla^2F - \lambda B F")
 
-    st.latex(r"""
-    \begin{aligned}
-    B(x,y,t) &:\ \text{Bacterial biomass density} \\
-    F(x,y,t) &:\ \text{Nutrient field} \\
-    D_B, D_F &:\ \text{Diffusion coefficients} \\
-    r &:\ \text{Growth rate} \\
-    \lambda &:\ \text{Consumption rate} \\
-    \xi &:\ \text{Stochastic noise} \\
-    \kappa &:\ \text{Tip growth amplification} \\
-    \eta &:\ \text{Self-growth baseline}
-    \end{aligned}
-    """)
+st.latex(r"""
+\Phi(x,y,t) = \eta + (1-\eta)\big(\bar{B}(x,y,t) + \xi(x,y,t) + \kappa T(x,y,t)\big)
+""")
+
+st.latex(r"""
+\begin{aligned}
+B(x,y,t) &:\ \text{Bacterial biomass density} \\
+F(x,y,t) &:\ \text{Nutrient concentration} \\
+\bar{B} &:\ \text{Local neighbor-averaged biomass} \\
+T &:\ \text{Tip indicator field (branch fronts)} \\
+\xi &:\ \text{Stochastic noise field} \\
+D_B, D_F &:\ \text{Diffusion coefficients} \\
+r &:\ \text{Growth rate} \\
+\lambda &:\ \text{Consumption rate} \\
+\kappa &:\ \text{Tip amplification strength} \\
+\eta &:\ \text{Self-growth baseline}
+\end{aligned}
+""")
+
+
 
     # ---------------- SIDEBAR ----------------
     st.sidebar.subheader("Physics Parameters")
@@ -272,3 +281,4 @@ def app():
 
 if __name__ == "__main__":
     app()
+
