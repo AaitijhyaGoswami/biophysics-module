@@ -14,6 +14,30 @@ def app():
     Local interactions generate spiral waves and long-term coexistence.
     """)
 
+    # ---------------- GOVERNING EQUATIONS ----------------
+    st.markdown("### Governing Equations")
+
+    st.latex(r"""
+    \frac{\partial S_R}{\partial t} = D_R \nabla^2 S_R + \sigma_R S_R (1 - S_R) - \beta S_R S_G
+    """)
+    st.latex(r"""
+    \frac{\partial S_G}{\partial t} = D_G \nabla^2 S_G + \sigma_G S_G (1 - S_G) - \beta S_G S_B
+    """)
+    st.latex(r"""
+    \frac{\partial S_B}{\partial t} = D_B \nabla^2 S_B + \sigma_B S_B (1 - S_B) - \beta S_B S_R
+    """)
+
+    st.latex(r"""
+    \begin{aligned}
+    S_R(x, y, t) &:\ \text{Density of toxic strain (R)} \\
+    S_G(x, y, t) &:\ \text{Density of sensitive strain (G)} \\
+    S_B(x, y, t) &:\ \text{Density of resistive strain (B)} \\
+    D_R, D_G, D_B &:\ \text{Diffusion coefficients for R, G, B} \\
+    \sigma_R, \sigma_G, \sigma_B &:\ \text{Growth (reproduction) rates of R, G, B} \\
+    \beta &:\ \text{Interaction (kill) probability}
+    \end{aligned}
+    """)
+
     # ---------------- MATHEMATICAL MODEL ----------------
     st.markdown("## Mathematical Model")
 
@@ -202,7 +226,5 @@ def app():
         )
 
 
-
 if __name__ == "__main__":
     app()
-
