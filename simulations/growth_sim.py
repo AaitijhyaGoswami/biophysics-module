@@ -39,11 +39,6 @@ def app():
         )
         return lap
 
-    def rgb_to_hex(rgb):
-        return '#{:02x}{:02x}{:02x}'.format(
-            int(rgb[0] * 255), int(rgb[1] * 255), int(rgb[2] * 255)
-        )
-
     # ---------------- INIT ----------------
     if "bg_initialized" not in st.session_state:
         st.session_state.bg_initialized = False
@@ -189,13 +184,10 @@ def app():
     bio_img[...,2]=bacteria*0.5
     bio_img[~mask]=0
 
-    z = gaussian_filter(bacteria, 1.5)
+    z = gaussian_filter(bacteria,1.5)
+    z = z / (z.max() + 1e-9) * 0.25  # flatten vertical scale
 
-# flatten vertical scale
-  z = z / (z.max() + 1e-9) * 0.15   # 0.25 = vertical compression
-
-fig3d = go.Figure(data=[go.Surface(z=z, colorscale="Inferno")])
-
+    fig3d = go.Figure(data=[go.Surface(z=z, colorscale="Inferno")])
     fig3d.update_layout(title=f"3D Biomass Surface (t={st.session_state.bg_time})",
                         margin=dict(l=0,r=0,b=0,t=30))
 
@@ -204,41 +196,35 @@ fig3d = go.Figure(data=[go.Surface(z=z, colorscale="Inferno")])
     ph_nutrient.image(nutr_img, caption="Nutrient Field", use_column_width=True)
     ph_biomass.image(bio_img, caption="Biomass Density", use_column_width=True)
 
-# ---------------- PLOTS ----------------
-if st.session_state.bg_hist_time:
-    df_global = pd.DataFrame({
-        "Time (mins)": st.session_state.bg_hist_time,
-        "Total Biomass": st.session_state.bg_pop_history,
-        "Total Nutrient": st.session_state.bg_nut_history
-    })
+    # ---------------- PLOTS ----------------
+    if st.session_state.bg_hist_time:
+        df_global = pd.DataFrame({
+            "Time (mins)": st.session_state.bg_hist_time,
+            "Total Biomass": st.session_state.bg_pop_history,
+            "Total Nutrient": st.session_state.bg_nut_history
+        })
+        df_melt = df_global.melt("Time (mins)", var_name="Metric", value_name="Value")
 
-    df_melt = df_global.melt("Time (mins)", var_name="Metric", value_name="Value")
+        chart_global = alt.Chart(df_melt).mark_line().encode(
+            x="Time (mins)", y="Value", color="Metric",
+            tooltip=["Time (mins)", "Metric", "Value"]
+        ).properties(title="Global Dynamics").interactive()
 
-    chart_global = alt.Chart(df_melt).mark_line().encode(
-        x="Time (mins)",
-        y="Value",
-        color="Metric",
-        tooltip=["Time (mins)", "Metric", "Value"]
-    ).properties(title="Global Dynamics").interactive()
+        ph_global.altair_chart(chart_global, use_container_width=True)
 
-    ph_global.altair_chart(chart_global, use_container_width=True)
+        data = {"Time (mins)": st.session_state.bg_hist_time}
+        for sid in range(1, num_seeds+1):
+            data[f"Colony {sid}"] = st.session_state.bg_colony_history[sid]
 
-    data = {"Time (mins)": st.session_state.bg_hist_time}
-    for sid in range(1, num_seeds+1):
-        data[f"Colony {sid}"] = st.session_state.bg_colony_history[sid]
+        df_col = pd.DataFrame(data)
+        df_col_melt = df_col.melt("Time (mins)", var_name="Colony", value_name="Biomass")
 
-    df_col = pd.DataFrame(data)
-    df_col_melt = df_col.melt("Time (mins)", var_name="Colony", value_name="Biomass")
+        chart_local = alt.Chart(df_col_melt).mark_line().encode(
+            x="Time (mins)", y="Biomass", color="Colony",
+            tooltip=["Time (mins)", "Colony", "Biomass"]
+        ).properties(title="Growth per Colony").interactive()
 
-    chart_local = alt.Chart(df_col_melt).mark_line().encode(
-        x="Time (mins)",
-        y="Biomass",
-        color="Colony",
-        tooltip=["Time (mins)", "Colony", "Biomass"]
-    ).properties(title="Growth per Colony").interactive()
-
-    ph_local.altair_chart(chart_local, use_container_width=True)
-
+        ph_local.altair_chart(chart_local, use_container_width=True)
 
 if __name__ == "__main__":
     app()
