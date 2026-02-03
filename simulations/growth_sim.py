@@ -4,6 +4,7 @@ import pandas as pd
 import altair as alt
 import plotly.graph_objects as go
 from scipy.ndimage import gaussian_filter
+import uuid
 
 def app():
     # --- Page Header ---
@@ -29,13 +30,12 @@ def app():
     grid_size = 300
     num_seeds = st.sidebar.slider("Number of Colonies", 1, 12, 12)
     seed_intensity = 0.03
-    steps_per_frame = st.sidebar.slider("Simulation Speed (Steps/Frame)", 1, 100, 40)
+    steps_per_frame = st.sidebar.slider("Simulation Speed", 1, 100, 40)
 
     # -------------------------------------------------------------------------
     # HELPER FUNCTIONS
     # -------------------------------------------------------------------------
     def laplacian(arr):
-        """Discrete 5-point stencil Laplacian for diffusion."""
         lap = np.zeros_like(arr)
         lap[1:-1, 1:-1] = (
             arr[:-2, 1:-1] + arr[2:, 1:-1] +
@@ -50,13 +50,12 @@ def app():
         )
 
     # -------------------------------------------------------------------------
-    # INITIALIZATION & RESET LOGIC
+    # INITIALIZATION
     # -------------------------------------------------------------------------
     if "bg_bacteria" not in st.session_state:
         st.session_state.bg_initialized = False
 
     def reset_simulation():
-        """Initialize circular domain, uniform nutrient, and random colony seeds."""
         y, x = np.ogrid[-grid_size / 2:grid_size / 2, -grid_size / 2:grid_size / 2]
         mask = x**2 + y**2 <= (grid_size / 2 - 2)**2
 
@@ -65,7 +64,6 @@ def app():
         food[mask] = 1.0
         seed_ids = np.zeros_like(bacteria, int)
 
-        # Randomly place seeds
         np.random.seed(42)
         for sid in range(1, num_seeds + 1):
             attempts = 0
@@ -77,7 +75,6 @@ def app():
                     bacteria[r, c] = seed_intensity
                     seed_ids[r, c] = sid
                     break
-                # Fallback if hard to place
                 if attempts > 5000:
                     ys, xs = np.where(mask & (bacteria == 0))
                     if len(ys) > 0:
@@ -86,7 +83,6 @@ def app():
                         seed_ids[ys[idx], xs[idx]] = sid
                     break
 
-        # Save to Session State
         st.session_state.bg_bacteria = bacteria
         st.session_state.bg_food = food
         st.session_state.bg_seed_ids = seed_ids
@@ -98,7 +94,6 @@ def app():
         st.session_state.bg_colony_history = {i: [] for i in range(1, 13)}
         st.session_state.bg_initialized = True
 
-    # Initialize if first run
     if not st.session_state.bg_initialized:
         reset_simulation()
 
@@ -107,31 +102,34 @@ def app():
         st.rerun()
 
     # -------------------------------------------------------------------------
-    # LAYOUT GRID (2x2 VISUALIZATION)
+    # LAYOUT GRID
     # -------------------------------------------------------------------------
     st.markdown("---")
+    
+    # Define Layout
     row1_col1, row1_col2 = st.columns(2)
     row2_col1, row2_col2 = st.columns(2)
 
     with row1_col1:
-        st.write("**1. Colony Morphology** (Top-Down)")
+        st.markdown("**1. Colony Morphology**")
         ph_colony = st.empty()
 
     with row1_col2:
-        st.write("**2. 3D Biomass Terrain** (Interactive)")
+        st.markdown("**2. 3D Biomass Terrain**")
+        # Initialize a container for Plotly
         ph_3d = st.empty()
 
     with row2_col1:
-        st.write("**3. Nutrient Field**")
+        st.markdown("**3. Nutrient Field**")
         ph_nutrient = st.empty()
 
     with row2_col2:
-        st.write("**4. Biomass Density** (2D)")
+        st.markdown("**4. Biomass Density**")
         ph_biomass = st.empty()
 
     st.markdown("---")
     
-    # Chart Placeholders
+    # Analytics
     col_g1, col_g2 = st.columns(2)
     ph_global = col_g1.empty()
     ph_local = col_g2.empty()
@@ -139,35 +137,28 @@ def app():
     run = st.toggle("▶️ Run Simulation", value=False)
 
     # -------------------------------------------------------------------------
-    # SIMULATION LOOP
+    # MAIN LOOP
     # -------------------------------------------------------------------------
     if run:
-        # Load State
         bacteria = st.session_state.bg_bacteria
         food = st.session_state.bg_food
         seed_ids = st.session_state.bg_seed_ids
         mask = st.session_state.bg_mask
 
-        # Physics Updates
         for _ in range(steps_per_frame):
-            # Diffusion
+            # Reaction-Diffusion Physics
             food += food_diff * laplacian(food)
             bacteria += bact_diff * laplacian(bacteria)
 
-            # Boundary Conditions
             food = np.clip(food, 0.0, 1.0)
             bacteria = np.clip(bacteria, 0.0, 1.0)
             bacteria[~mask] = 0.0
 
-            # Consumption
             food -= consumption_rate * bacteria
             food = np.clip(food, 0.0, 1.0)
 
-            # Growth & Branching Logic
-            nbr = (
-                np.roll(bacteria, 1, 0) + np.roll(bacteria, -1, 0) +
-                np.roll(bacteria, 1, 1) + np.roll(bacteria, -1, 1)
-            ) / 4.0
+            nbr = (np.roll(bacteria, 1, 0) + np.roll(bacteria, -1, 0) +
+                   np.roll(bacteria, 1, 1) + np.roll(bacteria, -1, 1)) / 4.0
 
             tip_drive = nbr * (1 - bacteria) * tip_factor
             noise = np.random.random(bacteria.shape)
@@ -180,7 +171,6 @@ def app():
             bacteria = np.clip(bacteria, 0.0, 1.0)
             bacteria[~mask] = 0.0
 
-            # ID Propagation (Voronoi-like)
             for sid in range(1, num_seeds + 1):
                 nbr_mask = (
                     np.roll(seed_ids == sid, 1, 0) |
@@ -208,20 +198,18 @@ def app():
     seed_ids = st.session_state.bg_seed_ids
     mask = st.session_state.bg_mask
 
-    # 1. Colony Morphology (RGB Construction)
+    # 1. Colony Morphology
     base_colors = np.array([
         [0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 0],
         [1, 0, 1], [0, 1, 1], [0.5, 0.5, 0], [0.5, 0, 0.5],
         [0, 0.5, 0.5], [1, 0.5, 0], [0.5, 1, 0], [1, 0, 0.5]
     ])
-    
     medium = np.zeros((grid_size, grid_size, 3), float)
     for sid in range(1, num_seeds + 1):
         sid_mask = (seed_ids == sid)
         for c in range(3):
             medium[..., c] += sid_mask * bacteria * base_colors[sid, c]
-
-    # Halo Effect for Branch Tips
+    
     nbr_field = (np.roll(bacteria, 1, 0) + np.roll(bacteria, -1, 0) +
                  np.roll(bacteria, 1, 1) + np.roll(bacteria, -1, 1)) / 4.0
     tips = (bacteria > 0) & (nbr_field < 0.3)
@@ -230,54 +218,57 @@ def app():
     medium += halo[..., None] * 0.6
     medium = np.clip(medium, 0, 1)
     medium[~mask] = 0.0
-
     ph_colony.image(medium, clamp=True, use_column_width=True)
 
-    # 2. 3D Terrain Render (Plotly)
-    # Optimization: Downsample 300x300 -> 100x100 (stride=3) to maintain FPS
+    # 2. 3D Terrain Render (DEBUGGED SECTION)
+    # Downsample for speed
     stride = 3
     z_data = bacteria[::stride, ::stride]
-    
+
+    # Create figure
     fig_3d = go.Figure(data=[go.Surface(
         z=z_data,
         colorscale='Viridis',
         cmin=0, cmax=1.0,
-        showscale=False # Hide colorbar for cleaner layout
+        opacity=1.0,
+        showscale=False
     )])
     
     fig_3d.update_layout(
+        title="",
+        autosize=True,
+        margin=dict(l=0, r=0, b=0, t=0),
         scene=dict(
-            xaxis=dict(visible=False), # Hide Grid Lines
+            xaxis=dict(visible=False),
             yaxis=dict(visible=False),
-            zaxis=dict(title='', range=[0, 1], showticklabels=False),
-            aspectratio=dict(x=1, y=1, z=0.4), # Flat petri dish look
-            camera=dict(eye=dict(x=1.4, y=1.4, z=1.2))
+            zaxis=dict(visible=True, range=[0, 1], title=""),
+            aspectratio=dict(x=1, y=1, z=0.4),
+            camera=dict(eye=dict(x=1.5, y=1.5, z=1.2))
         ),
-        margin=dict(l=0, r=0, b=0, t=0), # Tight margins
-        height=300,
         paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)'
+        plot_bgcolor='rgba(0,0,0,0)',
+        height=300
     )
-    ph_3d.plotly_chart(fig_3d, use_container_width=True, config={'displayModeBar': False})
+    
+    # Use a unique key to force redraw
+    unique_key = f"3d_plot_{st.session_state.bg_time}_{uuid.uuid4()}"
+    ph_3d.plotly_chart(fig_3d, use_container_width=True, key=unique_key)
 
     # 3. Nutrient Field
     nutr_img = np.zeros((grid_size, grid_size, 3))
-    nutr_img[..., 1] = food # Green Channel
+    nutr_img[..., 1] = food
     nutr_img[~mask] = 0.0
     ph_nutrient.image(nutr_img, clamp=True, use_column_width=True)
 
-    # 4. Biomass Density (2D)
+    # 4. Biomass Density
     bio_img = np.zeros((grid_size, grid_size, 3))
-    bio_img[..., 0] = bacteria # Red Channel
-    bio_img[..., 2] = bacteria * 0.5 # Purple-ish
+    bio_img[..., 0] = bacteria
+    bio_img[..., 2] = bacteria * 0.5
     bio_img[~mask] = 0.0
     ph_biomass.image(bio_img, clamp=True, use_column_width=True)
 
-    # -------------------------------------------------------------------------
-    # ANALYTICS PLOTS
-    # -------------------------------------------------------------------------
+    # Analytics
     if st.session_state.bg_pop_history:
-        # Global Dynamics
         df_global = pd.DataFrame({
             "Time": st.session_state.bg_hist_time,
             "Biomass": st.session_state.bg_pop_history,
@@ -286,10 +277,9 @@ def app():
 
         chart_global = alt.Chart(df_global).mark_line().encode(
             x="Time", y="Value", color="Metric"
-        ).properties(title="System Dynamics", height=250)
+        ).properties(title="Dynamics", height=250)
         ph_global.altair_chart(chart_global, use_container_width=True)
 
-        # Local Colony Growth
         data = {"Time": st.session_state.bg_hist_time}
         for sid in range(1, num_seeds + 1):
             data[f"C{sid}"] = st.session_state.bg_colony_history[sid][:len(st.session_state.bg_hist_time)]
@@ -301,7 +291,7 @@ def app():
         chart_local = alt.Chart(df_local).mark_line().encode(
             x="Time", y="Biomass",
             color=alt.Color("Colony", scale=alt.Scale(domain=domain, range=colors))
-        ).properties(title="Competition Growth Curves", height=250)
+        ).properties(title="Colony Competition", height=250)
         ph_local.altair_chart(chart_local, use_container_width=True)
 
 if __name__ == "__main__":
