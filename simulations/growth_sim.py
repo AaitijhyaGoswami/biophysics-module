@@ -6,11 +6,33 @@ import plotly.graph_objects as go
 from scipy.ndimage import gaussian_filter
 
 def app():
-    st.title("Stochastic Bacterial Colony Growth (2D + 3D)")
+    st.title("Stochastic Bacterial Colony Growth")
+    st.subheader("Reaction–Diffusion + Stochastic Tip-Driven Branching")
 
     st.markdown("""
-    **Model:** Reaction–Diffusion + Stochastic Tip Growth  
-    **Features:** Branching, nutrient depletion, lineage tracking, 3D biomass surface  
+    This simulator models **nutrient-limited bacterial colonies**
+    with **diffusion, stochastic tip growth, and lineage tracking**.
+    Branching morphologies emerge from noise-driven local instabilities.
+    """)
+
+    # ---------------- THEORY ----------------
+    st.markdown("### Governing Equations")
+
+    st.latex(r"\frac{\partial B}{\partial t}=D_B\nabla^2B + r B(1-B)F \,\Phi(x,y,t)")
+    st.latex(r"\frac{\partial F}{\partial t}=D_F\nabla^2F - \lambda B F")
+    st.latex(r"\Phi = \eta + (1-\eta)(\bar{B} + \xi + \kappa T)")
+
+    st.latex(r"""
+    \begin{aligned}
+    B(x,y,t) &:\ \text{Bacterial biomass density} \\
+    F(x,y,t) &:\ \text{Nutrient field} \\
+    D_B, D_F &:\ \text{Diffusion coefficients} \\
+    r &:\ \text{Growth rate} \\
+    \lambda &:\ \text{Consumption rate} \\
+    \xi &:\ \text{Stochastic noise} \\
+    \kappa &:\ \text{Tip growth amplification} \\
+    \eta &:\ \text{Self-growth baseline}
+    \end{aligned}
     """)
 
     # ---------------- SIDEBAR ----------------
@@ -79,23 +101,39 @@ def app():
         reset()
         st.rerun()
 
-    # ---------------- 2×2 GRID ----------------
+    # ---------------- LAYOUT ----------------
     row1 = st.columns(2)
     row2 = st.columns(2)
 
-    ph_colony = row1[0].empty()
-    ph_3d = row1[1].empty()
-    ph_nutrient = row2[0].empty()
-    ph_biomass = row2[1].empty()
+    with row1[0]:
+        st.markdown("### Figure 1 — 2D Colony Morphology")
+        ph_colony = st.empty()
+
+    with row1[1]:
+        st.markdown("### Figure 2 — 3D Biomass Surface")
+        ph_3d = st.empty()
+
+    with row2[0]:
+        st.markdown("### Figure 3 — Nutrient Field")
+        ph_nutrient = st.empty()
+
+    with row2[1]:
+        st.markdown("### Figure 4 — Biomass Density")
+        ph_biomass = st.empty()
 
     st.markdown("---")
 
     col_g1, col_g2 = st.columns(2)
-    ph_global = col_g1.empty()
-    ph_local = col_g2.empty()
+    with col_g1:
+        st.markdown("### Figure 5 — Global Dynamics")
+        ph_global = st.empty()
+    with col_g2:
+        st.markdown("### Figure 6 — Growth per Colony")
+        ph_local = st.empty()
 
     run = st.toggle("Run Simulation", value=False)
 
+    # ---------------- SIMULATION ----------------
     if run:
         bacteria = st.session_state.bg_bacteria
         food = st.session_state.bg_food
@@ -185,16 +223,16 @@ def app():
     bio_img[~mask]=0
 
     z = gaussian_filter(bacteria,1.5)
-    z = z / (z.max() + 1e-9) * 0.15  # flatten vertical scale
+    z = z / (z.max() + 1e-9) * 0.15
 
     fig3d = go.Figure(data=[go.Surface(z=z, colorscale="Inferno")])
     fig3d.update_layout(title=f"3D Biomass Surface (t={st.session_state.bg_time})",
                         margin=dict(l=0,r=0,b=0,t=30))
 
-    ph_colony.image(medium, caption="2D Colony Morphology", use_column_width=True)
+    ph_colony.image(medium, use_column_width=True)
     ph_3d.plotly_chart(fig3d, use_container_width=True)
-    ph_nutrient.image(nutr_img, caption="Nutrient Field", use_column_width=True)
-    ph_biomass.image(bio_img, caption="Biomass Density", use_column_width=True)
+    ph_nutrient.image(nutr_img, use_column_width=True)
+    ph_biomass.image(bio_img, use_column_width=True)
 
     # ---------------- PLOTS ----------------
     if st.session_state.bg_hist_time:
@@ -208,7 +246,7 @@ def app():
         chart_global = alt.Chart(df_melt).mark_line().encode(
             x="Time (mins)", y="Value", color="Metric",
             tooltip=["Time (mins)", "Metric", "Value"]
-        ).properties(title="Global Dynamics").interactive()
+        ).interactive()
 
         ph_global.altair_chart(chart_global, use_container_width=True)
 
@@ -222,10 +260,15 @@ def app():
         chart_local = alt.Chart(df_col_melt).mark_line().encode(
             x="Time (mins)", y="Biomass", color="Colony",
             tooltip=["Time (mins)", "Colony", "Biomass"]
-        ).properties(title="Growth per Colony").interactive()
+        ).interactive()
 
         ph_local.altair_chart(chart_local, use_container_width=True)
 
+    st.markdown("---")
+    st.markdown("""
+    **Numerics:** Forward Euler diffusion, stochastic branching,
+    tip amplification, lineage tracking, 3D biomass projection.
+    """)
+
 if __name__ == "__main__":
     app()
-
