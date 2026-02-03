@@ -6,14 +6,15 @@ import plotly.graph_objects as go
 from scipy.ndimage import gaussian_filter
 
 def app():
-    st.title("Stochastic Bacterial Colony Growth (2D + 3D)")
+    st.set_page_config(layout="wide")
+    st.title("Stochastic Bacterial Colony Growth (Smooth 2D + 3D)")
 
     st.markdown("""
-    **Model:** Reaction–Diffusion + Stochastic Tip Growth  
-    **Features:** Branching, nutrient depletion, lineage tracking, 3D biomass surface  
+    **Model:** Reaction–Diffusion with stochastic, surface-tension regulated growth  
+    **Visuals:** 2D lineage map, 3D biomass surface, nutrient field, density map  
     """)
 
-    # ---------------- SIDEBAR ----------------
+    # -------- Sidebar --------
     st.sidebar.subheader("Physics Parameters")
     food_diff = st.sidebar.slider("Food Diffusion", 0.0, 0.02, 0.008, format="%.4f")
     bact_diff = st.sidebar.slider("Bacteria Diffusion", 0.0, 0.05, 0.02, format="%.4f")
@@ -29,175 +30,156 @@ def app():
     seed_intensity = 0.03
     steps_per_frame = st.sidebar.slider("Simulation Speed", 1, 100, 40)
 
-    # ---------------- UTILS ----------------
+    # -------- Utils --------
     def laplacian(arr):
         lap = np.zeros_like(arr)
-        lap[1:-1, 1:-1] = (
-            arr[:-2, 1:-1] + arr[2:, 1:-1] +
-            arr[1:-1, :-2] + arr[1:-1, 2:] -
-            4 * arr[1:-1, 1:-1]
+        lap[1:-1,1:-1] = (
+            arr[:-2,1:-1] + arr[2:,1:-1] +
+            arr[1:-1,:-2] + arr[1:-1,2:] -
+            4*arr[1:-1,1:-1]
         )
         return lap
 
-    def rgb_to_hex(rgb):
-        return '#{:02x}{:02x}{:02x}'.format(
-            int(rgb[0] * 255), int(rgb[1] * 255), int(rgb[2] * 255)
-        )
-
-    # ---------------- INIT ----------------
+    # -------- Init --------
     if "bg_initialized" not in st.session_state:
         st.session_state.bg_initialized = False
 
     def reset():
-        y, x = np.ogrid[-grid/2:grid/2, -grid/2:grid/2]
-        mask = x**2 + y**2 <= (grid/2 - 2)**2
+        y,x = np.ogrid[-grid/2:grid/2, -grid/2:grid/2]
+        mask = x**2 + y**2 <= (grid/2-2)**2
 
-        bacteria = np.zeros((grid, grid))
-        food = np.zeros((grid, grid))
-        food[mask] = 1.0
+        bacteria = np.zeros((grid,grid))
+        food = np.zeros((grid,grid))
+        food[mask] = 1
         seed_ids = np.zeros_like(bacteria, int)
 
-        np.random.seed(42)
-        for sid in range(1, num_seeds + 1):
+        for sid in range(1, num_seeds+1):
             while True:
-                r, c = np.random.randint(10, grid-10, 2)
-                if mask[r, c] and bacteria[r, c] == 0:
-                    bacteria[r, c] = seed_intensity
-                    seed_ids[r, c] = sid
+                r,c = np.random.randint(10,grid-10,2)
+                if mask[r,c] and bacteria[r,c]==0:
+                    bacteria[r,c] = seed_intensity
+                    seed_ids[r,c] = sid
                     break
 
-        st.session_state.bg_bacteria = bacteria
-        st.session_state.bg_food = food
-        st.session_state.bg_seed_ids = seed_ids
-        st.session_state.bg_mask = mask
-        st.session_state.bg_time = 0
-        st.session_state.bg_hist_time = []
-        st.session_state.bg_pop_history = []
-        st.session_state.bg_nut_history = []
-        st.session_state.bg_colony_history = {i: [] for i in range(1, 13)}
-        st.session_state.bg_initialized = True
+        st.session_state.update({
+            "bg_bacteria": bacteria,
+            "bg_food": food,
+            "bg_seed_ids": seed_ids,
+            "bg_mask": mask,
+            "bg_time": 0,
+            "bg_hist_time": [],
+            "bg_pop_history": [],
+            "bg_nut_history": [],
+            "bg_colony_history": {i:[] for i in range(1,13)},
+            "bg_initialized": True
+        })
 
     if not st.session_state.bg_initialized:
         reset()
-
     if st.sidebar.button("Reset Simulation"):
-        reset()
-        st.rerun()
+        reset(); st.rerun()
 
-    # ---------------- 2×2 GRID ----------------
+    # -------- Layout --------
     row1 = st.columns(2)
     row2 = st.columns(2)
-
     ph_colony = row1[0].empty()
     ph_3d = row1[1].empty()
     ph_nutrient = row2[0].empty()
     ph_biomass = row2[1].empty()
 
     st.markdown("---")
+    g1,g2 = st.columns(2)
+    ph_global = g1.empty()
+    ph_local = g2.empty()
 
-    col_g1, col_g2 = st.columns(2)
-    ph_global = col_g1.empty()
-    ph_local = col_g2.empty()
-
-    run = st.toggle("Run Simulation", value=False)
+    run = st.toggle("Run Simulation")
 
     if run:
-        bacteria = st.session_state.bg_bacteria
-        food = st.session_state.bg_food
-        seed_ids = st.session_state.bg_seed_ids
-        mask = st.session_state.bg_mask
+        b = st.session_state.bg_bacteria
+        f = st.session_state.bg_food
+        s = st.session_state.bg_seed_ids
+        m = st.session_state.bg_mask
 
         for _ in range(steps_per_frame):
-            food += food_diff * laplacian(food)
-            bacteria += bact_diff * laplacian(bacteria)
+            f += food_diff * laplacian(f)
+            b += bact_diff * laplacian(b)
+            b = gaussian_filter(b, 0.6)  # surface tension
 
-            food = np.clip(food, 0, 1)
-            bacteria = np.clip(bacteria, 0, 1)
-            bacteria[~mask] = 0
+            f -= consumption_rate * b
+            f = np.clip(f,0,1)
+            b = np.clip(b,0,1)
+            b[~m] = 0
 
-            food -= consumption_rate * bacteria
-            food = np.clip(food, 0, 1)
+            nbr = gaussian_filter(b, 1.2)
+            tip = nbr*(1-b)*tip_factor
+            noise = np.random.rand(*b.shape)
+            drive = np.clip(nbr - noise_strength*(noise-0.5) + tip, 0, 1)
 
-            nbr = (np.roll(bacteria,1,0)+np.roll(bacteria,-1,0)+
-                   np.roll(bacteria,1,1)+np.roll(bacteria,-1,1))/4
+            growth = growth_rate*b*(1-b)*(self_growth+(1-self_growth)*drive)*f
+            b += growth
+            b = gaussian_filter(b, 0.6)
 
-            tip_drive = nbr * (1 - bacteria) * tip_factor
-            noise = np.random.random(bacteria.shape)
-            noisy = np.clip(nbr - noise_strength*(noise-0.5) + tip_drive, 0, 1)
-
-            local_drive = self_growth + (1-self_growth)*noisy
-            growth = growth_rate * bacteria * (1-bacteria) * local_drive * food
-            bacteria += growth
-            bacteria = np.clip(bacteria, 0, 1)
-            bacteria[~mask] = 0
-
-            for sid in range(1, num_seeds+1):
-                nbr_mask = (np.roll(seed_ids==sid,1,0)|
-                            np.roll(seed_ids==sid,-1,0)|
-                            np.roll(seed_ids==sid,1,1)|
-                            np.roll(seed_ids==sid,-1,1))
-                seed_ids[(nbr_mask)&(seed_ids==0)&(bacteria>0)] = sid
+            for sid in range(1,num_seeds+1):
+                nbr_mask = (np.roll(s==sid,1,0)|np.roll(s==sid,-1,0)|
+                            np.roll(s==sid,1,1)|np.roll(s==sid,-1,1))
+                s[(nbr_mask)&(s==0)&(b>0)] = sid
 
         st.session_state.bg_time += steps_per_frame
         t = st.session_state.bg_time
         st.session_state.bg_hist_time.append(t)
-        st.session_state.bg_pop_history.append(np.sum(bacteria))
-        st.session_state.bg_nut_history.append(np.sum(food))
+        st.session_state.bg_pop_history.append(b.sum())
+        st.session_state.bg_nut_history.append(f.sum())
+        for sid in range(1,num_seeds+1):
+            st.session_state.bg_colony_history[sid].append(b[s==sid].sum())
 
-        for sid in range(1, num_seeds+1):
-            st.session_state.bg_colony_history[sid].append(
-                np.sum(bacteria[seed_ids==sid])
-            )
-
-        st.session_state.bg_bacteria = bacteria
-        st.session_state.bg_food = food
-        st.session_state.bg_seed_ids = seed_ids
+        st.session_state.bg_bacteria = b
+        st.session_state.bg_food = f
+        st.session_state.bg_seed_ids = s
         st.rerun()
 
-    # ---------------- VISUALS ----------------
-    bacteria = st.session_state.bg_bacteria
-    food = st.session_state.bg_food
-    seed_ids = st.session_state.bg_seed_ids
-    mask = st.session_state.bg_mask
+    # -------- Render --------
+    b = st.session_state.bg_bacteria
+    f = st.session_state.bg_food
+    s = st.session_state.bg_seed_ids
+    m = st.session_state.bg_mask
 
-    base_colors = np.array([
-        [0,0,0],[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],
-        [0,1,1],[.5,.5,0],[.5,0,.5],[0,.5,.5],[1,.5,0],[.5,1,0],[1,0,.5]
-    ])
+    medium = np.dstack([b, np.zeros_like(b), b*0.6])
+    medium[~m] = 0
 
-    medium = np.zeros((grid,grid,3))
-    for sid in range(1, num_seeds+1):
-        sid_mask = seed_ids==sid
-        for c in range(3):
-            medium[...,c] += sid_mask*bacteria*base_colors[sid,c]
+    nutr = np.zeros((grid,grid,3))
+    nutr[...,1] = f; nutr[~m] = 0
 
-    nbr_field = (np.roll(bacteria,1,0)+np.roll(bacteria,-1,0)+
-                 np.roll(bacteria,1,1)+np.roll(bacteria,-1,1))/4
-    tips = (bacteria>0)&(nbr_field<0.3)
-    halo = gaussian_filter(tips.astype(float),1.2)
-    if halo.max()>0: halo/=halo.max()
-    medium += halo[...,None]*0.6
-    medium = np.clip(medium,0,1)
-    medium[~mask]=0
-
-    nutr_img = np.zeros((grid,grid,3))
-    nutr_img[...,1]=food
-    nutr_img[~mask]=0
-
-    bio_img = np.zeros((grid,grid,3))
-    bio_img[...,0]=bacteria
-    bio_img[...,2]=bacteria*0.5
-    bio_img[~mask]=0
-
-    z = gaussian_filter(bacteria,1.5)
+    z = gaussian_filter(b,1.5)
     fig3d = go.Figure(data=[go.Surface(z=z, colorscale="Inferno")])
-    fig3d.update_layout(title=f"3D Biomass Surface (t={st.session_state.bg_time})",
+    fig3d.update_layout(title=f"3D Biomass (t={st.session_state.bg_time})",
                         margin=dict(l=0,r=0,b=0,t=30))
 
-    ph_colony.image(medium, caption="2D Colony Morphology", use_column_width=True)
+    ph_colony.image(medium, caption="Colony Morphology", use_column_width=True)
     ph_3d.plotly_chart(fig3d, use_container_width=True)
-    ph_nutrient.image(nutr_img, caption="Nutrient Field", use_column_width=True)
-    ph_biomass.image(bio_img, caption="Biomass Density", use_column_width=True)
+    ph_nutrient.image(nutr, caption="Nutrient Field", use_column_width=True)
+    ph_biomass.image(medium, caption="Biomass Density", use_column_width=True)
+
+    if st.session_state.bg_hist_time:
+        df = pd.DataFrame({
+            "Time": st.session_state.bg_hist_time,
+            "Total Biomass": st.session_state.bg_pop_history,
+            "Total Nutrient": st.session_state.bg_nut_history
+        }).melt("Time")
+
+        ph_global.altair_chart(
+            alt.Chart(df).mark_line().encode(x="Time", y="value", color="variable"),
+            use_container_width=True
+        )
+
+        data = {"Time": st.session_state.bg_hist_time}
+        for sid in range(1,num_seeds+1):
+            data[f"C{sid}"] = st.session_state.bg_colony_history[sid]
+
+        df2 = pd.DataFrame(data).melt("Time")
+        ph_local.altair_chart(
+            alt.Chart(df2).mark_line().encode(x="Time", y="value", color="variable"),
+            use_container_width=True
+        )
 
 if __name__ == "__main__":
     app()
