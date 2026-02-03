@@ -3,35 +3,41 @@ import numpy as np
 import pandas as pd
 import altair as alt
 
+# ======================================================
+# Spatial Chemotaxis Lotka–Volterra Simulator
+# ======================================================
 
 def app():
-    st.title("Spatial Lotka-Volterra (Predator-Prey)")
+    st.title("Chemotaxis Predator–Prey (Reaction–Diffusion)")
     st.markdown("""
-    **Simulation Details:**
-    * **Model:** Reaction-Diffusion on a 2D Petri dish.
-    * **Dynamics:** Prey (Blue) consume Nutrient (Green); Predators (Red) consume Prey.
-    * **Logic:** Finite Difference diffusion with coupled LV reactions.
+    **Model:** Keller–Segel chemotaxis + Lotka–Volterra  
+    **Mechanism:** Predators move *up the prey gradient*  
+    **Result:** Spiral hunting fronts & collapsing prey islands
     """)
 
-    st.sidebar.subheader("Model Parameters")
+    # ---------------- Sidebar ----------------
+    st.sidebar.subheader("Diffusion")
+    d_prey = st.sidebar.slider("Prey Diffusion", 0.0, 0.1, 0.02)
+    d_pred = st.sidebar.slider("Predator Diffusion", 0.0, 0.1, 0.03)
 
-    # Diffusion
-    d_prey = st.sidebar.slider("Diff Prey", 0.0, 0.1, 0.02, format="%.3f")
-    d_pred = st.sidebar.slider("Diff Predator", 0.0, 0.1, 0.03, format="%.3f")
+    st.sidebar.subheader("Lotka–Volterra")
+    mu = st.sidebar.slider("Prey Growth μ", 0.0, 0.1, 0.05)
+    alpha = st.sidebar.slider("Nutrient Use α", 0.0, 0.1, 0.05)
+    beta = st.sidebar.slider("Predation β", 0.0, 0.1, 0.03)
+    gamma = st.sidebar.slider("Predator Eff γ", 0.0, 1.0, 0.8)
+    delta = st.sidebar.slider("Predator Death δ", 0.0, 0.01, 0.002)
 
-    # Lotka–Volterra coefficients
-    mu = st.sidebar.slider("Prey Growth (μ)", 0.0, 0.1, 0.05, format="%.3f")
-    alpha = st.sidebar.slider("Nutrient Consump (α)", 0.0, 0.1, 0.05, format="%.3f")
-    beta = st.sidebar.slider("Predation Rate (β)", 0.0, 0.1, 0.03, format="%.3f")
-    gamma = st.sidebar.slider("Predator Eff (γ)", 0.0, 1.0, 0.8, format="%.2f")
-    delta = st.sidebar.slider("Predator Death (δ)", 0.0, 0.01, 0.002, format="%.4f")
+    st.sidebar.subheader("Chemotaxis")
+    chi = st.sidebar.slider("Chemotaxis Strength χ", 0.0, 2.0, 0.8)
 
-    st.sidebar.subheader("System Settings")
+    st.sidebar.subheader("System")
     grid = 200
-    steps_per_frame = st.sidebar.slider("Simulation Speed", 1, 50, 5)
+    steps_per_frame = st.sidebar.slider("Speed", 1, 50, 5)
 
+    dt = 0.1
+
+    # ---------------- Operators ----------------
     def laplacian(arr):
-        """Discrete 5-point Laplacian for isotropic diffusion."""
         lap = np.zeros_like(arr)
         lap[1:-1, 1:-1] = (
             arr[:-2, 1:-1] + arr[2:, 1:-1] +
@@ -40,189 +46,124 @@ def app():
         )
         return lap
 
-    def seed_colonies(mask, count, radius, intensity):
-        """Random circular colonies seeded inside the dish."""
+    def gradient(arr):
+        gx = np.zeros_like(arr)
+        gy = np.zeros_like(arr)
+        gx[:, 1:-1] = (arr[:, 2:] - arr[:, :-2]) / 2
+        gy[1:-1, :] = (arr[2:, :] - arr[:-2, :]) / 2
+        return gx, gy
+
+    def divergence(fx, fy):
+        div = np.zeros_like(fx)
+        div[1:-1, 1:-1] = (
+            (fx[1:-1, 2:] - fx[1:-1, :-2]) / 2 +
+            (fy[2:, 1:-1] - fy[:-2, 1:-1]) / 2
+        )
+        return div
+
+    def seed(mask, n, r, val):
         arr = np.zeros_like(mask, float)
         ys, xs = np.where(mask)
-        for _ in range(count):
-            if len(ys) == 0:
-                break
-            idx = np.random.randint(len(ys))
-            cy, cx = ys[idx], xs[idx]
+        for _ in range(n):
+            i = np.random.randint(len(ys))
+            cy, cx = ys[i], xs[i]
             yy, xx = np.ogrid[:grid, :grid]
-            dist2 = (yy - cy) ** 2 + (xx - cx) ** 2
-            arr[dist2 <= radius ** 2] = intensity
+            arr[(yy - cy)**2 + (xx - cx)**2 <= r*r] = val
         return arr
 
-    if "lv_prey" not in st.session_state:
-        st.session_state.lv_initialized = False
+    # ---------------- Reset ----------------
+    if "lv_init" not in st.session_state:
+        st.session_state.lv_init = False
 
     def reset():
-        """Initialize circular petri dish with seeded prey, predator, nutrient."""
-        y, x = np.ogrid[-grid / 2:grid / 2, -grid / 2:grid / 2]
-        mask = x ** 2 + y ** 2 <= (grid / 2 - 2) ** 2
+        y, x = np.ogrid[-grid/2:grid/2, -grid/2:grid/2]
+        mask = x**2 + y**2 <= (grid/2 - 2)**2
 
-        np.random.seed(42)
-        prey = seed_colonies(mask, 20, 5, 0.5)
-        predator = seed_colonies(mask, 10, 4, 0.3)
+        prey = seed(mask, 20, 5, 0.6)
+        predator = seed(mask, 10, 4, 0.4)
+        nutrient = np.ones((grid, grid)) * mask
 
-        nutrient = np.ones((grid, grid))
-        nutrient[~mask] = 0
+        st.session_state.p = prey
+        st.session_state.q = predator
+        st.session_state.n = nutrient
+        st.session_state.mask = mask
+        st.session_state.t = 0
+        st.session_state.hist = {"t": [], "p": [], "q": [], "n": [], "r": []}
+        st.session_state.lv_init = True
 
-        st.session_state.lv_prey = prey
-        st.session_state.lv_predator = predator
-        st.session_state.lv_nutrient = nutrient
-        st.session_state.lv_mask = mask
-        st.session_state.lv_time = 0
-
-        st.session_state.lv_hist_time = []
-        st.session_state.lv_hist_prey = []
-        st.session_state.lv_hist_pred = []
-        st.session_state.lv_hist_nutr = []
-        st.session_state.lv_hist_ratio = []
-
-        st.session_state.lv_initialized = True
-
-    if not st.session_state.lv_initialized:
+    if not st.session_state.lv_init:
         reset()
 
-    if st.sidebar.button("Reset Simulation"):
+    if st.sidebar.button("Reset"):
         reset()
         st.rerun()
 
-    col_main, col_graph = st.columns([1, 1])
+    col1, col2 = st.columns(2)
+    petri = col1.empty()
+    plot = col2.empty()
 
-    with col_main:
-        st.write("### Petri Dish")
-        petri_view = st.empty()
+    run = st.toggle("Run Simulation")
 
-    with col_graph:
-        st.write("### Real-time Dynamics")
-        chart_pop = st.empty()
-        chart_nutr = st.empty()
-        chart_ratio = st.empty()
-
-    running = st.toggle("Run Simulation", value=False)
-
-    if running:
-        prey = st.session_state.lv_prey
-        predator = st.session_state.lv_predator
-        nutrient = st.session_state.lv_nutrient
-        mask = st.session_state.lv_mask
+    # ---------------- Simulation ----------------
+    if run:
+        P = st.session_state.p
+        Q = st.session_state.q
+        N = st.session_state.n
+        mask = st.session_state.mask
 
         for _ in range(steps_per_frame):
-            # Diffusion
-            prey += d_prey * laplacian(prey)
-            predator += d_pred * laplacian(predator)
+            gx, gy = gradient(P)
+            Jx = Q * gx
+            Jy = Q * gy
+            chemo = divergence(Jx, Jy)
 
-            # Lotka–Volterra reactions
-            dp = mu * prey * nutrient - beta * prey * predator
-            dq = gamma * beta * prey * predator - delta * predator
-            dnut = -alpha * prey * nutrient
+            dP = mu*P*N - beta*P*Q
+            dQ = gamma*beta*P*Q - delta*Q
+            dN = -alpha*P*N
 
-            prey += dp
-            predator += dq
-            nutrient += dnut
+            P += dt*(dP + d_prey*laplacian(P))
+            Q += dt*(dQ + d_pred*laplacian(Q) - chi*chemo)
+            N += dt*dN
 
-            prey = np.clip(prey, 0, 1)
-            predator = np.clip(predator, 0, 1)
-            nutrient = np.clip(nutrient, 0, 1)
+            P = np.clip(P, 0, 1)
+            Q = np.clip(Q, 0, 1)
+            N = np.clip(N, 0, 1)
 
-            prey[~mask] = 0
-            predator[~mask] = 0
-            nutrient[~mask] = 0
+            P[~mask] = Q[~mask] = N[~mask] = 0
 
-            st.session_state.lv_time += 1
+            st.session_state.t += 1
+            if st.session_state.t % 5 == 0:
+                st.session_state.hist["t"].append(st.session_state.t)
+                st.session_state.hist["p"].append(P.sum())
+                st.session_state.hist["q"].append(Q.sum())
+                st.session_state.hist["n"].append(N.sum())
+                st.session_state.hist["r"].append(Q.sum()/P.sum() if P.sum() > 0 else 0)
 
-            if st.session_state.lv_time % 5 == 0:
-                t = st.session_state.lv_time
-                sp, sq = np.sum(prey), np.sum(predator)
-                st.session_state.lv_hist_time.append(t)
-                st.session_state.lv_hist_prey.append(sp)
-                st.session_state.lv_hist_pred.append(sq)
-                st.session_state.lv_hist_nutr.append(np.sum(nutrient))
-                st.session_state.lv_hist_ratio.append(sq / sp if sp > 0 else 0)
-
-        st.session_state.lv_prey = prey
-        st.session_state.lv_predator = predator
-        st.session_state.lv_nutrient = nutrient
-
+        st.session_state.p, st.session_state.q, st.session_state.n = P, Q, N
         st.rerun()
 
-    prey = st.session_state.lv_prey
-    predator = st.session_state.lv_predator
-    nutrient = st.session_state.lv_nutrient
-    mask = st.session_state.lv_mask
+    # ---------------- Visualization ----------------
+    P = st.session_state.p
+    Q = st.session_state.q
+    N = st.session_state.n
+    mask = st.session_state.mask
 
     img = np.zeros((grid, grid, 3))
-    img[..., 0] = np.clip(predator * 4, 0, 1)
-    img[..., 1] = np.clip(nutrient * 4, 0, 1)
-    img[..., 2] = np.clip(prey * 4, 0, 1)
+    img[...,0] = np.clip(Q*4, 0, 1)
+    img[...,1] = np.clip(N*4, 0, 1)
+    img[...,2] = np.clip(P*4, 0, 1)
     img[~mask] = 0
 
-    petri_view.image(
-        img,
-        caption=f"Time: {st.session_state.lv_time} mins",
-        use_column_width=True,
-        clamp=True
-    )
+    petri.image(img, caption=f"Time: {st.session_state.t}", use_column_width=True)
 
-    if len(st.session_state.lv_hist_time) > 0:
-        df_pop = pd.DataFrame({
-            "Time": st.session_state.lv_hist_time,
-            "Prey": st.session_state.lv_hist_prey,
-            "Predator": st.session_state.lv_hist_pred
-        })
-
-        df_pop_melt = df_pop.melt("Time", var_name="Species", value_name="Population")
-
-        pop_plot = (
-            alt.Chart(df_pop_melt)
+    if len(st.session_state.hist["t"]) > 5:
+        df = pd.DataFrame(st.session_state.hist)
+        plot.altair_chart(
+            alt.Chart(df.melt("t"))
             .mark_line()
-            .encode(
-                x=alt.X("Time", axis=alt.Axis(title="Time (minutes)")),
-                y=alt.Y("Population", axis=alt.Axis(title="Population")),
-                color=alt.Color(
-                    "Species",
-                    scale=alt.Scale(domain=["Prey", "Predator"], range=["blue", "red"])
-                )
-            )
-            .properties(height=200)
+            .encode(x="t", y="value", color="variable"),
+            use_container_width=True
         )
-        chart_pop.altair_chart(pop_plot, use_container_width=True)
-
-        df_nutr = pd.DataFrame({
-            "Time": st.session_state.lv_hist_time,
-            "Nutrient": st.session_state.lv_hist_nutr
-        })
-
-        nutr_plot = (
-            alt.Chart(df_nutr)
-            .mark_line(color="green")
-            .encode(
-                x=alt.X("Time", axis=alt.Axis(title="Time (minutes)")),
-                y=alt.Y("Nutrient", axis=alt.Axis(title="Total Nutrient"))
-            )
-            .properties(height=150)
-        )
-        chart_nutr.altair_chart(nutr_plot, use_container_width=True)
-
-        df_ratio = pd.DataFrame({
-            "Time": st.session_state.lv_hist_time,
-            "Ratio": st.session_state.lv_hist_ratio
-        })
-
-        ratio_plot = (
-            alt.Chart(df_ratio)
-            .mark_line(color="orange")
-            .encode(
-                x=alt.X("Time", axis=alt.Axis(title="Time (minutes)")),
-                y=alt.Y("Ratio", axis=alt.Axis(title="Predator/Prey"))
-            )
-            .properties(height=150)
-        )
-        chart_ratio.altair_chart(ratio_plot, use_container_width=True)
-
 
 if __name__ == "__main__":
     app()
