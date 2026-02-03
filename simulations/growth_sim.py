@@ -137,27 +137,41 @@ def app():
         st.session_state.bg_seed_ids = s
         st.rerun()
 
-    # -------- Render --------
+    # -------- Render (FIXED) --------
     b = st.session_state.bg_bacteria
     f = st.session_state.bg_food
     s = st.session_state.bg_seed_ids
     m = st.session_state.bg_mask
 
-    medium = np.dstack([b, np.zeros_like(b), b*0.6])
+    b_norm = b.copy()
+    if b_norm.max() > 0:
+        b_norm /= b_norm.max()
+
+    medium = np.zeros((grid, grid, 3))
+    medium[..., 0] = b_norm
+    medium[..., 2] = b_norm * 0.7
     medium[~m] = 0
 
-    nutr = np.zeros((grid,grid,3))
-    nutr[...,1] = f; nutr[~m] = 0
+    f_norm = f.copy()
+    if f_norm.max() > 0:
+        f_norm /= f_norm.max()
+
+    nutr = np.zeros((grid, grid, 3))
+    nutr[..., 1] = f_norm
+    nutr[~m] = 0
 
     z = gaussian_filter(b,1.5)
     fig3d = go.Figure(data=[go.Surface(z=z, colorscale="Inferno")])
     fig3d.update_layout(title=f"3D Biomass (t={st.session_state.bg_time})",
                         margin=dict(l=0,r=0,b=0,t=30))
 
-    ph_colony.image(medium, caption="Colony Morphology", use_column_width=True)
+    ph_colony.image(medium, caption="Colony Morphology",
+                    clamp=True, use_column_width=True)
     ph_3d.plotly_chart(fig3d, use_container_width=True)
-    ph_nutrient.image(nutr, caption="Nutrient Field", use_column_width=True)
-    ph_biomass.image(medium, caption="Biomass Density", use_column_width=True)
+    ph_nutrient.image(nutr, caption="Nutrient Field",
+                      clamp=True, use_column_width=True)
+    ph_biomass.image(medium, caption="Biomass Density",
+                     clamp=True, use_column_width=True)
 
     if st.session_state.bg_hist_time:
         df = pd.DataFrame({
