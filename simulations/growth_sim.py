@@ -116,7 +116,6 @@ def app():
 
     with row1_col2:
         st.markdown("**2. 3D Biomass Terrain**")
-        # Initialize a container for Plotly
         ph_3d = st.empty()
 
     with row2_col1:
@@ -220,37 +219,28 @@ def app():
     medium[~mask] = 0.0
     ph_colony.image(medium, clamp=True, use_column_width=True)
 
-    # 2. 3D Terrain Render (DEBUGGED SECTION)
-    # Downsample for speed
+    # 2. 3D Terrain Render
     stride = 3
     z_data = bacteria[::stride, ::stride]
-
-    # Create figure
+    
     fig_3d = go.Figure(data=[go.Surface(
-        z=z_data,
-        colorscale='Viridis',
-        cmin=0, cmax=1.0,
-        opacity=1.0,
-        showscale=False
+        z=z_data, colorscale='Viridis', cmin=0, cmax=1.0,
+        opacity=1.0, showscale=False
     )])
     
     fig_3d.update_layout(
-        title="",
-        autosize=True,
+        title="", autosize=True,
         margin=dict(l=0, r=0, b=0, t=0),
         scene=dict(
-            xaxis=dict(visible=False),
-            yaxis=dict(visible=False),
+            xaxis=dict(visible=False), yaxis=dict(visible=False),
             zaxis=dict(visible=True, range=[0, 1], title=""),
             aspectratio=dict(x=1, y=1, z=0.4),
             camera=dict(eye=dict(x=1.5, y=1.5, z=1.2))
         ),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
         height=300
     )
     
-    # Use a unique key to force redraw
     unique_key = f"3d_plot_{st.session_state.bg_time}_{uuid.uuid4()}"
     ph_3d.plotly_chart(fig_3d, use_container_width=True, key=unique_key)
 
@@ -267,31 +257,45 @@ def app():
     bio_img[~mask] = 0.0
     ph_biomass.image(bio_img, clamp=True, use_column_width=True)
 
-    # Analytics
+    # -------------------------------------------------------------------------
+    # ANALYTICS (RESTORED FROM 2D CODE)
+    # -------------------------------------------------------------------------
     if st.session_state.bg_pop_history:
+        # A. Global Dynamics Chart
         df_global = pd.DataFrame({
-            "Time": st.session_state.bg_hist_time,
-            "Biomass": st.session_state.bg_pop_history,
-            "Nutrient": st.session_state.bg_nut_history
-        }).melt("Time", var_name="Metric", value_name="Value")
+            "Time (mins)": st.session_state.bg_hist_time,
+            "Total Biomass": st.session_state.bg_pop_history,
+            "Total Nutrient": st.session_state.bg_nut_history
+        })
+        df_global_melt = df_global.melt("Time (mins)", var_name="Metric", value_name="Value")
 
-        chart_global = alt.Chart(df_global).mark_line().encode(
-            x="Time", y="Value", color="Metric"
-        ).properties(title="Dynamics", height=250)
+        chart_global = alt.Chart(df_global_melt).mark_line().encode(
+            x="Time (mins)",
+            y="Value",
+            color="Metric",
+            tooltip=["Time (mins)", "Metric", "Value"]
+        ).properties(title="Global Dynamics").interactive()
+
         ph_global.altair_chart(chart_global, use_container_width=True)
 
-        data = {"Time": st.session_state.bg_hist_time}
+        # B. Per-Colony Growth Chart
+        data = {"Time (mins)": st.session_state.bg_hist_time}
         for sid in range(1, num_seeds + 1):
-            data[f"C{sid}"] = st.session_state.bg_colony_history[sid][:len(st.session_state.bg_hist_time)]
-        
-        df_local = pd.DataFrame(data).melt("Time", var_name="Colony", value_name="Biomass")
-        domain = [f"C{sid}" for sid in range(1, num_seeds + 1)]
+            data[f"Colony {sid}"] = st.session_state.bg_colony_history[sid][:len(st.session_state.bg_hist_time)]
+
+        df_col = pd.DataFrame(data)
+        df_col_melt = df_col.melt("Time (mins)", var_name="Colony", value_name="Biomass")
+
+        domain = [f"Colony {sid}" for sid in range(1, num_seeds + 1)]
         colors = [rgb_to_hex(base_colors[sid]) for sid in range(1, num_seeds + 1)]
 
-        chart_local = alt.Chart(df_local).mark_line().encode(
-            x="Time", y="Biomass",
-            color=alt.Color("Colony", scale=alt.Scale(domain=domain, range=colors))
-        ).properties(title="Colony Competition", height=250)
+        chart_local = alt.Chart(df_col_melt).mark_line().encode(
+            x="Time (mins)",
+            y="Biomass",
+            color=alt.Color("Colony", scale=alt.Scale(domain=domain, range=colors)),
+            tooltip=["Time (mins)", "Colony", "Biomass"]
+        ).properties(title="Growth per Colony").interactive()
+
         ph_local.altair_chart(chart_local, use_container_width=True)
 
 if __name__ == "__main__":
