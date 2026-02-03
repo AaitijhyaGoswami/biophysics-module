@@ -16,43 +16,39 @@ def app():
     """)
 
     # ---------------- THEORY ----------------
-    # ---------------- THEORY ----------------
-      # ---------------- THEORY ----------------
-st.markdown("### Governing Equations")
+    st.markdown("### Governing Equations")
 
-st.latex(r"\frac{\partial B}{\partial t}=D_B\nabla^2B + r B(1-B)F \,\Phi(x,y,t)")
-st.latex(r"\frac{\partial F}{\partial t}=D_F\nabla^2F - \lambda B F")
+    st.latex(r"\frac{\partial B}{\partial t}=D_B\nabla^2B + r B(1-B)F \,\Phi(x,y,t)")
+    st.latex(r"\frac{\partial F}{\partial t}=D_F\nabla^2F - \lambda B F")
 
-st.latex(r"""
-\Phi(x,y,t) = \eta + (1-\eta)\big(\bar{B}(x,y,t) + \xi(x,y,t) + \kappa T(x,y,t)\big)
-""")
+    st.latex(r"""
+    \Phi(x,y,t) = \eta + (1-\eta)\big(\bar{B}(x,y,t) + \xi(x,y,t) + \kappa T(x,y,t)\big)
+    """)
 
-st.latex(r"""
-\begin{aligned}
-B(x,y,t) &:\ \text{Bacterial biomass density} \\
-F(x,y,t) &:\ \text{Nutrient concentration} \\
-\bar{B} &:\ \text{Local neighbor-averaged biomass} \\
-T &:\ \text{Tip indicator field (branch fronts)} \\
-\xi &:\ \text{Stochastic noise field} \\
-D_B, D_F &:\ \text{Diffusion coefficients} \\
-r &:\ \text{Growth rate} \\
-\lambda &:\ \text{Consumption rate} \\
-\kappa &:\ \text{Tip amplification strength} \\
-\eta &:\ \text{Self-growth baseline}
-\end{aligned}
-""")
-
-
+    st.latex(r"""
+    \begin{aligned}
+    B(x,y,t) &:\ \text{Bacterial biomass density} \\
+    F(x,y,t) &:\ \text{Nutrient concentration} \\
+    \bar{B} &:\ \text{Local neighbor-averaged biomass} \\
+    T &:\ \text{Tip indicator field (branch fronts)} \\
+    \xi &:\ \text{Stochastic noise field} \\
+    D_B, D_F &:\ \text{Diffusion coefficients} \\
+    r &:\ \text{Growth rate} \\
+    \lambda &:\ \text{Consumption rate} \\
+    \kappa &:\ \text{Tip amplification strength} \\
+    \eta &:\ \text{Self-growth baseline}
+    \end{aligned}
+    """)
 
     # ---------------- SIDEBAR ----------------
     st.sidebar.subheader("Physics Parameters")
     food_diff = st.sidebar.slider("Food Diffusion", 0.0, 0.02, 0.008, format="%.4f")
     bact_diff = st.sidebar.slider("Bacteria Diffusion", 0.0, 0.05, 0.02, format="%.4f")
     growth_rate = st.sidebar.slider("Growth Rate", 0.0, 0.1, 0.05, format="%.4f")
-    self_growth = st.sidebar.slider("Self Growth", 0.0, 0.05, 0.012, format="%.4f")
-    consumption_rate = st.sidebar.slider("Consumption Rate", 0.0, 0.02, 0.006, format="%.4f")
-    noise_strength = st.sidebar.slider("Stochastic Noise", 0.0, 1.0, 0.65)
-    tip_factor = st.sidebar.slider("Tip Growth Factor", 0.5, 2.0, 1.0)
+    self_growth = st.sidebar.slider("Self Growth (η)", 0.0, 0.05, 0.012, format="%.4f")
+    consumption_rate = st.sidebar.slider("Consumption Rate (λ)", 0.0, 0.02, 0.006, format="%.4f")
+    noise_strength = st.sidebar.slider("Stochastic Noise (ξ)", 0.0, 1.0, 0.65)
+    tip_factor = st.sidebar.slider("Tip Growth Factor (κ)", 0.5, 2.0, 1.0)
 
     st.sidebar.subheader("System Settings")
     grid = 300
@@ -281,4 +277,3 @@ r &:\ \text{Growth rate} \\
 
 if __name__ == "__main__":
     app()
-
