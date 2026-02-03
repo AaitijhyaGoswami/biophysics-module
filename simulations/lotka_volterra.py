@@ -21,7 +21,7 @@ def app():
     st.latex(r"\frac{\partial Q}{\partial t}=D_Q\nabla^2Q-\chi\nabla\cdot(Q\nabla P)+\gamma\beta PQ-\delta Q")
     st.latex(r"\frac{\partial N}{\partial t}=-\alpha PN")
 
-    st.markdown("""
+    st.latex("""
     **Fields:**  
     \(P\) = Prey, \(Q\) = Predator, \(N\) = Nutrient  
 
@@ -219,3 +219,4 @@ def app():
 
 if __name__ == "__main__":
     app()
+
