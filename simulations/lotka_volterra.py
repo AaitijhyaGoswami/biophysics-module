@@ -5,10 +5,29 @@ import altair as alt
 
 def app():
     st.title("Spatial Chemotaxis Predator–Prey")
+    st.subheader("Reaction–Diffusion–Chemotaxis System in a Circular Domain")
+
     st.markdown("""
-    **Model:** Keller–Segel Chemotaxis + Lotka–Volterra  
-    **Dynamics:** Predators actively climb prey gradients  
-    **System:** 2D circular Petri dish with nutrient coupling
+    This interactive simulation solves a **coupled nonlinear PDE system**
+    describing predator–prey interactions with **directed chemotactic motion**.
+    Predators migrate up prey gradients, producing spiral hunting fronts
+    and collapse zones.
+    """)
+
+    # ---------------- THEORY ----------------
+    st.markdown("### Governing Equations")
+
+    st.latex(r"\frac{\partial P}{\partial t}=D_P\nabla^2P+\mu PN-\beta PQ")
+    st.latex(r"\frac{\partial Q}{\partial t}=D_Q\nabla^2Q-\chi\nabla\cdot(Q\nabla P)+\gamma\beta PQ-\delta Q")
+    st.latex(r"\frac{\partial N}{\partial t}=-\alpha PN")
+
+    st.markdown("""
+    **Fields:**  
+    \(P\) = Prey, \(Q\) = Predator, \(N\) = Nutrient  
+
+    **Parameters:**  
+    \(D_P,D_Q\) diffusion, \(\chi\) chemotaxis,  
+    \(\mu,\alpha,\beta,\gamma,\delta\) LV rates
     """)
 
     # ---------------- Sidebar ----------------
@@ -29,7 +48,6 @@ def app():
     st.sidebar.subheader("System")
     grid = 200
     steps_per_frame = st.sidebar.slider("Simulation Speed", 1, 50, 5)
-
     dt = 0.1
 
     # ---------------- Operators ----------------
@@ -61,8 +79,8 @@ def app():
         arr = np.zeros_like(mask, float)
         ys, xs = np.where(mask)
         for _ in range(count):
-            idx = np.random.randint(len(ys))
-            cy, cx = ys[idx], xs[idx]
+            i = np.random.randint(len(ys))
+            cy, cx = ys[i], xs[i]
             yy, xx = np.ogrid[:grid, :grid]
             arr[(yy-cy)**2 + (xx-cx)**2 <= radius**2] = intensity
         return arr
@@ -102,11 +120,17 @@ def app():
         st.rerun()
 
     col_main, col_graph = st.columns([1,1])
-    petri_view = col_main.empty()
+
+    with col_main:
+        st.markdown("### Figure 1 — Spatial Density Fields")
+        petri_view = st.empty()
 
     with col_graph:
+        st.markdown("### Figure 2 — Global Population Dynamics")
         chart_pop = st.empty()
+        st.markdown("### Figure 3 — Nutrient Depletion")
         chart_nutr = st.empty()
+        st.markdown("### Figure 4 — Predator/Prey Ratio")
         chart_ratio = st.empty()
 
     running = st.toggle("Run Simulation", value=False)
@@ -120,9 +144,7 @@ def app():
 
         for _ in range(steps_per_frame):
             gx, gy = gradient(P)
-            Jx = Q * gx
-            Jy = Q * gy
-            chemo = divergence(Jx, Jy)
+            chemo = divergence(Q*gx, Q*gy)
 
             dP = mu*P*N - beta*P*Q
             dQ = gamma*beta*P*Q - delta*Q
@@ -135,7 +157,6 @@ def app():
             P = np.clip(P, 0, 1)
             Q = np.clip(Q, 0, 1)
             N = np.clip(N, 0, 1)
-
             P[~mask] = Q[~mask] = N[~mask] = 0
 
             st.session_state.t += 1
@@ -163,6 +184,10 @@ def app():
 
     petri_view.image(img, caption=f"Time: {st.session_state.t}", use_column_width=True, clamp=True)
 
+    st.markdown("""
+    **RGB legend:** 🔴 Predator | 🟢 Nutrient | 🔵 Prey
+    """)
+
     if len(st.session_state.hist_t) > 0:
         df_pop = pd.DataFrame({
             "Time": st.session_state.hist_t,
@@ -185,6 +210,12 @@ def app():
         chart_ratio.altair_chart(
             alt.Chart(df_r).mark_line(color="orange").encode(x="Time", y="Ratio").properties(height=150),
             use_container_width=True)
+
+    st.markdown("---")
+    st.markdown("""
+    **Numerics:** Forward Euler, 5-point finite differences,  
+    Keller–Segel chemotaxis + Lotka–Volterra reactions.
+    """)
 
 if __name__ == "__main__":
     app()
