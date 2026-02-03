@@ -21,21 +21,21 @@ def app():
     st.latex(r"\frac{\partial Q}{\partial t}=D_Q\nabla^2Q-\chi\nabla\cdot(Q\nabla P)+\gamma\beta PQ-\delta Q")
     st.latex(r"\frac{\partial N}{\partial t}=-\alpha PN")
 
-   st.latex(r"""
-\begin{aligned}
-P(x,y,t) &:\ \text{Prey density} \\
-Q(x,y,t) &:\ \text{Predator density} \\
-N(x,y,t) &:\ \text{Nutrient concentration} \\
-\\
-D_P,\, D_Q &:\ \text{Diffusion coefficients} \\
-\chi &:\ \text{Chemotactic sensitivity} \\
-\mu &:\ \text{Prey growth rate} \\
-\alpha &:\ \text{Nutrient consumption rate} \\
-\beta &:\ \text{Predation rate} \\
-\gamma &:\ \text{Predator conversion efficiency} \\
-\delta &:\ \text{Predator death rate}
-\end{aligned}
-""")
+    st.latex(r"""
+    \begin{aligned}
+    P(x,y,t) &:\ \text{Prey density} \\
+    Q(x,y,t) &:\ \text{Predator density} \\
+    N(x,y,t) &:\ \text{Nutrient concentration} \\
+    \\
+    D_P,\, D_Q &:\ \text{Diffusion coefficients} \\
+    \chi &:\ \text{Chemotactic sensitivity} \\
+    \mu &:\ \text{Prey growth rate} \\
+    \alpha &:\ \text{Nutrient consumption rate} \\
+    \beta &:\ \text{Predation rate} \\
+    \gamma &:\ \text{Predator conversion efficiency} \\
+    \delta &:\ \text{Predator death rate}
+    \end{aligned}
+    """)
 
     # ---------------- Sidebar ----------------
     st.sidebar.subheader("Diffusion")
@@ -191,9 +191,7 @@ D_P,\, D_Q &:\ \text{Diffusion coefficients} \\
 
     petri_view.image(img, caption=f"Time: {st.session_state.t}", use_column_width=True, clamp=True)
 
-    st.markdown("""
-    **RGB legend:** 🔴 Predator | 🟢 Nutrient | 🔵 Prey
-    """)
+    st.markdown("**RGB legend:** 🔴 Predator | 🟢 Nutrient | 🔵 Prey")
 
     if len(st.session_state.hist_t) > 0:
         df_pop = pd.DataFrame({
@@ -219,12 +217,7 @@ D_P,\, D_Q &:\ \text{Diffusion coefficients} \\
             use_container_width=True)
 
     st.markdown("---")
-    st.markdown("""
-    **Numerics:** Forward Euler, 5-point finite differences,  
-    Keller–Segel chemotaxis + Lotka–Volterra reactions.
-    """)
+    st.markdown("**Numerics:** Forward Euler, 5-point finite differences, Keller–Segel chemotaxis + Lotka–Volterra reactions.")
 
 if __name__ == "__main__":
     app()
-
-
