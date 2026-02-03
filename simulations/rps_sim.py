@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import altair as alt
 
+
 def app():
     st.title("Cyclic Dominance (Rock–Paper–Scissors)")
     st.subheader("A Spatial Non-Transitive Competition Model")
@@ -13,28 +14,38 @@ def app():
     Local interactions generate spiral waves and long-term coexistence.
     """)
 
-    # ---------------- THEORY ----------------
+    # ---------------- MATHEMATICAL MODEL ----------------
     st.markdown("## Mathematical Model")
 
     st.latex(r"S(x,y,t) \in \{0,R,B,G\}")
+
     st.latex(r"R \succ G,\quad G \succ B,\quad B \succ R")
 
     st.latex(r"""
-    \Pr\big[S(x,y,t+1)=S(x',y',t)\big] = \sigma
+    \Pr\big[S(x,y,t+\Delta t)=S(x',y',t)\big]
+    = \sigma \;\; \text{if } S(x,y,t)=\emptyset
     """)
 
     st.latex(r"""
-    \Pr\big[S(x,y,t+1)=S(x',y',t)\big] = \beta
-    \quad \text{if } S(x',y',t) \succ S(x,y,t)
+    \Pr\big[S(x,y,t+\Delta t)=S(x',y',t)\big]
+    = \beta \;\; \text{if } S(x',y',t) \succ S(x,y,t)
+    """)
+
+    st.latex(r"""
+    S(x,y,t+\Delta t)=
+    \begin{cases}
+    S(x',y',t), & \text{reproduction or dominance},\\
+    S(x,y,t), & \text{otherwise}.
+    \end{cases}
     """)
 
     st.latex(r"""
     \begin{aligned}
-    R &: \text{Toxic strain}\\
-    G &: \text{Sensitive strain}\\
-    B &: \text{Resistive strain}\\
+    S(x,y,t) &: \text{species at lattice site } (x,y)\\
+    R,G,B &: \text{toxic, sensitive, resistive strains}\\
     \sigma &: \text{reproduction probability}\\
-    \beta &: \text{dominance interaction probability}
+    \beta &: \text{interaction (kill) probability}\\
+    (x',y') &: \text{random neighboring site}
     \end{aligned}
     """)
 
@@ -67,7 +78,7 @@ def app():
 
         grid[(rand < init_red) & mask] = RED
         grid[(rand >= init_red) & (rand < init_red + init_blue) & mask] = BLUE
-        grid[(rand >= init_red + init_blue) & 
+        grid[(rand >= init_red + init_blue) &
              (rand < init_red + init_blue + init_green) & mask] = GREEN
 
         st.session_state.rps_grid = grid
