@@ -3,15 +3,12 @@ import numpy as np
 import pandas as pd
 import altair as alt
 
-# =========================================================
-# Utility: one fast coarse simulation for phase diagram
-# =========================================================
+# ---------------- PHASE MAP UTILITY ----------------
 def run_coarse(mu, p, steps=120, size=60):
     CENTER = size//2
     RADIUS = size//2 - 4
     MAX_RES = 3
 
-    # antibiotic rings
     A = np.ones((size,size))*99
     for r in range(size):
         for c in range(size):
@@ -44,11 +41,10 @@ def run_coarse(mu, p, steps=120, size=60):
     tot=np.sum(B>0)
     if tot==0: return 0
     frac3=np.sum(B==3)/tot
-    if frac3>0.7: return 2   # superbug takeover
-    return 1                # coexistence
+    if frac3>0.7: return 2
+    return 1
 
-
-# =========================================================
+# ---------------- APP ----------------
 def app():
     st.title("The MEGA Plate Experiment")
     st.subheader("Spatial Reaction–Selection–Mutation Model")
@@ -60,10 +56,8 @@ def app():
 
     # ---------------- THEORY ----------------
     st.markdown("### Governing Model")
-
     st.latex(r"B_i(x,y,t)\in\{0,1\},\ i\in\{1,2,3\}")
     st.latex(r"A(x,y)\in\{0,1,2\}")
-
     st.latex(r"""
     B_i(x,y,t+1)=
     \begin{cases}
@@ -71,19 +65,9 @@ def app():
     B_i(x,y,t), & \text{otherwise}
     \end{cases}
     """)
-
     st.latex(r"\Pr(B_i(x\to x',t+1)=1)=p")
     st.latex(r"\Pr(i\to i+1)=\mu")
-    st.latex(r"i-1\ge A(x')\quad\text{(selection filter)}")
-
-    st.latex(r"""
-    \begin{aligned}
-    B_i &: \text{genotype } i\\
-    A(x) &: \text{antibiotic zone}\\
-    p &: \text{reproduction probability}\\
-    \mu &: \text{mutation probability}
-    \end{aligned}
-    """)
+    st.latex(r"i-1\ge A(x')")
 
     # ---------------- SIDEBAR ----------------
     st.sidebar.subheader("Evolution Parameters")
@@ -97,7 +81,6 @@ def app():
     MAX_RES_LEVEL = 3
     STEPS_PER_FRAME = st.sidebar.slider("Speed", 1, 10, 2)
 
-    # ---------------- INIT ----------------
     if "mp_grid" not in st.session_state:
         st.session_state.mp_initialized = False
 
@@ -116,7 +99,7 @@ def app():
                     ab_map[r, c] = 2
 
         bac_grid = np.zeros((SIZE, SIZE), dtype=int)
-        bac_grid[CENTER - 1:CENTER + 2, CENTER - 1:CENTER + 2] = 1
+        bac_grid[CENTER-1:CENTER+2, CENTER-1:CENTER+2] = 1
 
         st.session_state.mp_ab_map = ab_map
         st.session_state.mp_grid = bac_grid
@@ -133,7 +116,6 @@ def app():
         reset_simulation()
         st.rerun()
 
-    # ---------------- LAYOUT ----------------
     col_vis, col_stats = st.columns([1, 1])
 
     with col_vis:
@@ -144,10 +126,8 @@ def app():
         st.markdown("### Figure 2 — Population Dynamics")
         chart_total = st.empty()
         chart_frac = st.empty()
-
-    st.markdown("---")
-    st.markdown("### Figure 3 — μ vs p Phase Diagram")
-    phase_placeholder = st.empty()
+        st.markdown("#### μ–p Phase Diagram")
+        phase_placeholder = st.empty()
 
     run_sim = st.toggle("Run Simulation", value=False)
 
@@ -220,11 +200,8 @@ def app():
 
     # ---------------- PLOTS ----------------
     if st.session_state.mp_hist_time:
-        df_total = pd.DataFrame({
-            "Time": st.session_state.mp_hist_time,
-            "Population": st.session_state.mp_hist_total
-        })
-
+        df_total = pd.DataFrame({"Time": st.session_state.mp_hist_time,
+                                 "Population": st.session_state.mp_hist_total})
         chart_total.altair_chart(
             alt.Chart(df_total).mark_line().encode(x="Time", y="Population"),
             use_container_width=True
@@ -246,25 +223,21 @@ def app():
     # ---------------- PHASE MAP ----------------
     mus = np.linspace(0, 0.1, 10)
     ps = np.linspace(0, 1, 10)
-
     phase = []
     for mu in mus:
         for p in ps:
-            state = run_coarse(mu, p)
-            phase.append([mu, p, state])
+            phase.append([mu, p, run_coarse(mu, p)])
 
     df_phase = pd.DataFrame(phase, columns=["mu", "p", "state"])
-
     phase_chart = alt.Chart(df_phase).mark_rect().encode(
         x="mu:O", y="p:O",
         color=alt.Color("state:Q",
-            scale=alt.Scale(domain=[0,1,2],
-                            range=["black","orange","red"]),
-            legend=None)
-    ).properties(height=300)
+                        scale=alt.Scale(domain=[0,1,2],
+                                        range=["black","orange","red"]),
+                        legend=None)
+    ).properties(height=250)
 
     phase_placeholder.altair_chart(phase_chart, use_container_width=True)
-
 
 if __name__ == "__main__":
     app()
