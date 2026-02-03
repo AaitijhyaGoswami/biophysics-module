@@ -130,4 +130,58 @@ def app():
 
             # Secretion, Diffusion, Decay processes
             X += prod_x * mask_a
-            Y += prod_y **
+            Y += prod_y * mask_b
+            X += D_diffusion * laplacian(X) - decay_rate_x * X
+            Y += D_diffusion * laplacian(Y) - decay_rate_y * Y
+
+            # Clipping values to valid ranges
+            X = np.clip(X, 0, 1)
+            Y = np.clip(Y, 0, 1)
+
+            rand_birth = np.random.random(grid.shape)
+            rand_death = np.random.random(grid.shape)
+
+            # Mortality and Reproduction
+            grid[np.logical_and(mask_a, rand_death < toxicity * Y)] = EMPTY
+            grid[np.logical_and(mask_b, rand_death < death_b)] = EMPTY
+
+            dx = np.random.randint(-1, 2, size=(GRID, GRID))
+            dy = np.random.randint(-1, 2, size=(GRID, GRID))
+            x_idx, y_idx = np.indices(grid.shape)
+            nx, ny = (x_idx + dx) % GRID, (y_idx + dy) % GRID
+
+            reproduction_a = np.logical_and(grid == EMPTY, np.logical_and(grid[nx, ny] == SPECIES_A, rand_birth < growth_a))
+            reproduction_b = np.logical_and(grid == EMPTY, np.logical_and(grid[nx, ny] == SPECIES_B, rand_birth < growth_b * X))
+            grid[reproduction_a] = SPECIES_A
+            grid[reproduction_b] = SPECIES_B
+
+        st.session_state.time += 0.1
+        st.session_state.grid = grid
+        st.session_state.field_x = X
+        st.session_state.field_y = Y
+        st.rerun()
+
+    # ---------------- Visualization ----------------
+    grid = st.session_state.grid
+    img = np.zeros((GRID, GRID, 3))
+    img[grid == SPECIES_A] = [1.0, 0.2, 0.2]
+    img[grid == SPECIES_B] = [0.2, 1.0, 0.2]
+    plate_placeholder.image(img, caption=f"Time: {st.session_state.time:.1f}", use_column_width=True)
+
+    # ---------------- Population Plots ----------------
+    if st.session_state.hist_time:
+        df = pd.DataFrame({
+            'Time': st.session_state.hist_time,
+            'Producers (A)': st.session_state.hist_species_a,
+            'Consumers (B)': st.session_state.hist_species_b
+        }).melt('Time', var_name='Species', value_name='Population')
+
+        chart = alt.Chart(df).mark_line().encode(
+            x='Time', y='Population', color='Species'
+        ).properties(height=250)
+
+        chart_placeholder.altair_chart(chart, use_container_width=True)
+
+
+if __name__ == "__main__":
+    app()
