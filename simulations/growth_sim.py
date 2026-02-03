@@ -185,7 +185,7 @@ def app():
     bio_img[~mask]=0
 
     z = gaussian_filter(bacteria,1.5)
-    z = z / (z.max() + 1e-9) * 0.25  # flatten vertical scale
+    z = z / (z.max() + 1e-9) * 0.15  # flatten vertical scale
 
     fig3d = go.Figure(data=[go.Surface(z=z, colorscale="Inferno")])
     fig3d.update_layout(title=f"3D Biomass Surface (t={st.session_state.bg_time})",
@@ -228,3 +228,4 @@ def app():
 
 if __name__ == "__main__":
     app()
+
