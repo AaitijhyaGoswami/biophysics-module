@@ -21,14 +21,21 @@ def app():
     st.latex(r"\frac{\partial Q}{\partial t}=D_Q\nabla^2Q-\chi\nabla\cdot(Q\nabla P)+\gamma\beta PQ-\delta Q")
     st.latex(r"\frac{\partial N}{\partial t}=-\alpha PN")
 
-    st.latex("""
-    **Fields:**  
-    \(P\) = Prey, \(Q\) = Predator, \(N\) = Nutrient  
-
-    **Parameters:**  
-    \(D_P,D_Q\) diffusion, \(\chi\) chemotaxis,  
-    \(\mu,\alpha,\beta,\gamma,\delta\) LV rates
-    """)
+   st.latex(r"""
+\begin{aligned}
+P(x,y,t) &:\ \text{Prey density} \\
+Q(x,y,t) &:\ \text{Predator density} \\
+N(x,y,t) &:\ \text{Nutrient concentration} \\
+\\
+D_P,\, D_Q &:\ \text{Diffusion coefficients} \\
+\chi &:\ \text{Chemotactic sensitivity} \\
+\mu &:\ \text{Prey growth rate} \\
+\alpha &:\ \text{Nutrient consumption rate} \\
+\beta &:\ \text{Predation rate} \\
+\gamma &:\ \text{Predator conversion efficiency} \\
+\delta &:\ \text{Predator death rate}
+\end{aligned}
+""")
 
     # ---------------- Sidebar ----------------
     st.sidebar.subheader("Diffusion")
@@ -219,4 +226,5 @@ def app():
 
 if __name__ == "__main__":
     app()
+
 
