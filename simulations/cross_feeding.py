@@ -90,9 +90,23 @@ def app():
     if st.sidebar.button("Reset Simulation"):
         reset(); st.rerun()
 
-    col1, col2 = st.columns([1.5, 1])
-    dish = col1.empty()
-    chart_ph = col2.empty()
+    # ---------------- Layout with Figure Labels ----------------
+    col_main, col_plots = st.columns([1.5, 1])
+
+    with col_main:
+        st.markdown("### Figure 1 — Spatial Species Distribution")
+        st.markdown("""
+        <div style='display:flex;gap:18px;font-size:14px;margin-bottom:8px;'>
+            <div><span style='color:#FF4444;font-size:20px'>■</span> Producers (A)</div>
+            <div><span style='color:#44FF44;font-size:20px'>■</span> Consumers (B)</div>
+            <div><span style='color:#8888FF;font-size:20px'>☁</span> Poison Field (Y)</div>
+        </div>
+        """, unsafe_allow_html=True)
+        dish = st.empty()
+
+    with col_plots:
+        st.markdown("### Figure 2 — Global Population Dynamics")
+        chart_ph = st.empty()
 
     run = st.toggle("Run Simulation", False)
 
@@ -144,6 +158,7 @@ def app():
 
         st.rerun()
 
+    # ---------------- Render ----------------
     grid = st.session_state.grid
     Y = st.session_state.Y
 
@@ -156,7 +171,7 @@ def app():
     img[empty, 2] = poison[empty]
     img[empty, 0] = poison[empty] * 0.6
 
-    dish.image(img, caption="Species + Poison Field (Y)", clamp=True, use_column_width=True)
+    dish.image(img, clamp=True, use_column_width=True)
 
     if st.session_state.hist_time:
         df = pd.DataFrame({
@@ -167,7 +182,7 @@ def app():
 
         chart = alt.Chart(df).mark_line().encode(
             x="Time", y="Population", color="Species"
-        ).properties(title="Global Population Dynamics")
+        )
 
         chart_ph.altair_chart(chart, use_container_width=True)
 
