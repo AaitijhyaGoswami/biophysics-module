@@ -105,8 +105,8 @@ if page == "Home":
     # 3. MEGA Plate Evolution
     st.markdown("""
     ### **3. MEGA Plate Evolution**
-    - **Abstract:** Based on the *Microbial Evolution and Growth Arena (MEGA)* plate experiment, this model captures 
-      *antibiotic resistance evolution under spatially distributed drug gradients*. Spatial dynamics, stochastic
+    - **Abstract:** Based on the Microbial Evolution and Growth Arena (MEGA) plate experiment, this model captures 
+      antibiotic resistance evolution under spatially distributed drug gradients. Spatial dynamics, stochastic
       mutation rates, and stepwise resistance development are simulated to illustrate how bacteria adapt 
       under extreme selective pressure.
     - **Applications:** - Predicting the emergence of Multi-Drug Resistance (MDR).  
@@ -119,9 +119,9 @@ if page == "Home":
     # 4. Cyclic Dominance
     st.markdown("""
     ### **4. Cyclic Dominance**
-    - **Abstract:** This module captures non-transitive interactions (e.g., *A beats B, B beats C, C beats A*),
+    - **Abstract:** This module captures non-transitive interactions (e.g., A beats B, B beats C, C beats A),
       typical of ecosystems characterized by cyclic dominance. The model uses stochastic spatial lattice 
-      updates to reveal the emergence of *spiral waves* and the preservation of biodiversity via non-transitive
+      updates to reveal the emergence of spiral waves and the preservation of biodiversity via non-transitive
       interactions.
     - **Applications:** - Studying the maintenance of biodiversity in complex ecosystems.  
         - Game Theory applications in evolutionary biology and social dynamics.  
