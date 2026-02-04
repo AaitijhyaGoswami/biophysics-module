@@ -120,7 +120,7 @@ if page == "Home":
 
     # 4. Cyclic Dominance
     st.markdown("""
-    ### **4. [Cyclic Dominance](https://arxiv.org/abs/1408.6828)**
+    ### **4. [Cyclic Dominance](https://en.wikipedia.org/wiki/Cyclic_succession)**
     - **Abstract:** This module captures non-transitive interactions (e.g., A beats B, B beats C, C beats A),
       typical of ecosystems characterized by cyclic dominance. The model uses stochastic spatial lattice 
       updates to reveal the emergence of spiral waves and the preservation of biodiversity via non-transitive
