@@ -5,6 +5,7 @@ import altair as alt
 
 
 def app():
+    st.set_page_config(layout="wide")
     st.title("Chemically Mediated Cross-Feeding")
     st.subheader("A Spatial Model for Two Mutualistic Species")
 
@@ -51,136 +52,126 @@ def app():
 
     # ---------------- SIDEBAR ----------------
     st.sidebar.subheader("Ecosystem Parameters")
-    D_diffusion = st.sidebar.slider("Diffusion Coefficient (D)", 0.01, 0.5, 0.15, step=0.01)
-    decay_rate_x = st.sidebar.slider("Decay Rate of X (δ_X)", 0.01, 0.1, 0.05, step=0.01)
-    decay_rate_y = st.sidebar.slider("Decay Rate of Y (δ_Y)", 0.01, 0.1, 0.03, step=0.01)
+    D = st.sidebar.slider("Diffusion Coefficient (D)", 0.01, 0.5, 0.15, step=0.01)
+    decay_x = st.sidebar.slider("Decay Rate of X (δ_X)", 0.01, 0.1, 0.05, step=0.01)
+    decay_y = st.sidebar.slider("Decay Rate of Y (δ_Y)", 0.01, 0.1, 0.03, step=0.01)
 
     st.sidebar.subheader("Population Parameters")
-    growth_a = st.sidebar.slider("Growth Rate of A (r_A)", 0.0, 1.0, 0.1, step=0.01)
-    growth_b = st.sidebar.slider("Growth Rate of B (r_B)", 0.0, 2.0, 0.8, step=0.01)
-    death_a = st.sidebar.slider("Mortality of A due to Y (d_A)", 0.0, 1.0, 0.5, step=0.01)
-    death_b = st.sidebar.slider("Mortality Rate of B (d_B)", 0.0, 0.1, 0.02, step=0.001, format="%.3f")
+    rA = st.sidebar.slider("Growth Rate of A", 0.0, 1.0, 0.1, step=0.01)
+    rB = st.sidebar.slider("Growth Rate of B", 0.0, 2.0, 0.8, step=0.01)
+    dA = st.sidebar.slider("Mortality of A due to Y", 0.0, 1.0, 0.5, step=0.01)
+    dB = st.sidebar.slider("Mortality Rate of B", 0.0, 0.1, 0.02, step=0.001)
 
     st.sidebar.subheader("Chemical Parameters")
-    prod_x = st.sidebar.slider("Production Rate of X by A (P_X)", 0.0, 1.0, 0.6, step=0.01)
-    prod_y = st.sidebar.slider("Production Rate of Y by B (P_Y)", 0.0, 1.0, 0.4, step=0.01)
+    P_X = st.sidebar.slider("Production Rate of X by A", 0.0, 1.0, 0.6, step=0.01)
+    P_Y = st.sidebar.slider("Production Rate of Y by B", 0.0, 1.0, 0.4, step=0.01)
     toxicity = st.sidebar.slider("Y Toxicity", 0.0, 2.0, 0.8, step=0.01)
 
-    steps_per_frame = st.sidebar.slider("Steps per Frame", 1, 20, 5)
+    steps = st.sidebar.slider("Steps per Frame", 1, 20, 5)
 
     GRID = 200
-    EMPTY, SPECIES_A, SPECIES_B = 0, 1, 2
+    EMPTY, A, B = 0, 1, 2
 
-    if "grid" not in st.session_state:
+    if "initialized" not in st.session_state:
         st.session_state.initialized = False
 
-    def reset_simulation():
-        grid = np.random.choice([EMPTY, SPECIES_A, SPECIES_B], (GRID, GRID), p=[0.9, 0.05, 0.05])
-        field_x = np.zeros((GRID, GRID))
-        field_y = np.zeros((GRID, GRID))
-        st.session_state.grid = grid
-        st.session_state.field_x = field_x
-        st.session_state.field_y = field_y
+    def reset():
+        st.session_state.grid = np.random.choice([EMPTY, A, B], (GRID, GRID), p=[0.9, 0.05, 0.05])
+        st.session_state.X = np.zeros((GRID, GRID))
+        st.session_state.Y = np.zeros((GRID, GRID))
         st.session_state.time = 0.0
         st.session_state.hist_time = []
-        st.session_state.hist_species_a = []
-        st.session_state.hist_species_b = []
+        st.session_state.hist_A = []
+        st.session_state.hist_B = []
         st.session_state.initialized = True
 
     if not st.session_state.initialized:
-        reset_simulation()
+        reset()
 
     if st.sidebar.button("Reset Simulation"):
-        reset_simulation()
-        st.rerun()
+        reset(); st.rerun()
 
-    # ---------------- Layout ----------------
-    col_vis, col_stats = st.columns([1, 1])
+    col1, col2, col3 = st.columns(3)
+    ph_species = col1.empty()
+    ph_X = col2.empty()
+    ph_Y = col3.empty()
 
-    with col_vis:
-        st.markdown("### Figure 1 — Spatial Population Dynamics")
-        plate_placeholder = st.empty()
+    chart_ph = st.empty()
 
-    with col_stats:
-        st.markdown("### Figure 2 — Global Population Dynamics")
-        chart_placeholder = st.empty()
+    run = st.toggle("Run Simulation", False)
 
-    run_sim = st.toggle("Run Simulation", value=False)
+    def laplacian(F):
+        return (
+            np.roll(F, 1, 0) + np.roll(F, -1, 0) +
+            np.roll(F, 1, 1) + np.roll(F, -1, 1) -
+            4 * F
+        )
 
-    st.markdown("**Legend:** 🔴 Producers (A) | 🟢 Consumers (B)")
-
-    # ---------------- Simulation ----------------
-    if run_sim:
+    if run:
         grid = st.session_state.grid
-        X = st.session_state.field_x
-        Y = st.session_state.field_y
+        X = st.session_state.X
+        Y = st.session_state.Y
 
-        def laplacian(field):
-            return (
-                np.roll(field, 1, axis=0) +
-                np.roll(field, -1, axis=0) +
-                np.roll(field, 1, axis=1) +
-                np.roll(field, -1, axis=1) -
-                4 * field
-            )
+        for _ in range(steps):
+            maskA = grid == A
+            maskB = grid == B
 
-        for _ in range(steps_per_frame):
-            mask_a = grid == SPECIES_A
-            mask_b = grid == SPECIES_B
+            X += P_X * maskA
+            Y += P_Y * maskB
 
-            # Secretion, Diffusion, Decay processes
-            X += prod_x * mask_a
-            Y += prod_y * mask_b
-            X += D_diffusion * laplacian(X) - decay_rate_x * X
-            Y += D_diffusion * laplacian(Y) - decay_rate_y * Y
+            X += D * laplacian(X) - decay_x * X
+            Y += D * laplacian(Y) - decay_y * Y
 
-            # Clipping values to valid ranges
             X = np.clip(X, 0, 1)
             Y = np.clip(Y, 0, 1)
 
-            rand_birth = np.random.random(grid.shape)
-            rand_death = np.random.random(grid.shape)
+            rand = np.random.rand(GRID, GRID)
+            grid[(maskA) & (rand < toxicity * Y)] = EMPTY
+            grid[(maskB) & (rand < dB)] = EMPTY
 
-            # Mortality and Reproduction
-            grid[np.logical_and(mask_a, rand_death < toxicity * Y)] = EMPTY
-            grid[np.logical_and(mask_b, rand_death < death_b)] = EMPTY
+            dx = np.random.randint(-1, 2, (GRID, GRID))
+            dy = np.random.randint(-1, 2, (GRID, GRID))
+            x, y = np.indices(grid.shape)
+            nx, ny = (x + dx) % GRID, (y + dy) % GRID
 
-            dx = np.random.randint(-1, 2, size=(GRID, GRID))
-            dy = np.random.randint(-1, 2, size=(GRID, GRID))
-            x_idx, y_idx = np.indices(grid.shape)
-            nx, ny = (x_idx + dx) % GRID, (y_idx + dy) % GRID
-
-            reproduction_a = np.logical_and(grid == EMPTY, np.logical_and(grid[nx, ny] == SPECIES_A, rand_birth < growth_a))
-            reproduction_b = np.logical_and(grid == EMPTY, np.logical_and(grid[nx, ny] == SPECIES_B, rand_birth < growth_b * X))
-            grid[reproduction_a] = SPECIES_A
-            grid[reproduction_b] = SPECIES_B
+            grid[(grid == EMPTY) & (grid[nx, ny] == A) & (rand < rA)] = A
+            grid[(grid == EMPTY) & (grid[nx, ny] == B) & (rand < rB * X)] = B
 
         st.session_state.time += 0.1
         st.session_state.grid = grid
-        st.session_state.field_x = X
-        st.session_state.field_y = Y
+        st.session_state.X = X
+        st.session_state.Y = Y
+
+        st.session_state.hist_time.append(st.session_state.time)
+        st.session_state.hist_A.append(np.sum(grid == A))
+        st.session_state.hist_B.append(np.sum(grid == B))
+
         st.rerun()
 
-    # ---------------- Visualization ----------------
     grid = st.session_state.grid
-    img = np.zeros((GRID, GRID, 3))
-    img[grid == SPECIES_A] = [1.0, 0.2, 0.2]
-    img[grid == SPECIES_B] = [0.2, 1.0, 0.2]
-    plate_placeholder.image(img, caption=f"Time: {st.session_state.time:.1f}", use_column_width=True)
+    X = st.session_state.X
+    Y = st.session_state.Y
 
-    # ---------------- Population Plots ----------------
+    img = np.zeros((GRID, GRID, 3))
+    img[grid == A] = [1, 0.2, 0.2]
+    img[grid == B] = [0.2, 1, 0.2]
+
+    ph_species.image(img, caption="Species Distribution", use_column_width=True)
+    ph_X.image(X, caption="Nutrient Field X", clamp=True, use_column_width=True)
+    ph_Y.image(Y, caption="Poison Field Y", clamp=True, use_column_width=True)
+
     if st.session_state.hist_time:
         df = pd.DataFrame({
-            'Time': st.session_state.hist_time,
-            'Producers (A)': st.session_state.hist_species_a,
-            'Consumers (B)': st.session_state.hist_species_b
-        }).melt('Time', var_name='Species', value_name='Population')
+            "Time": st.session_state.hist_time,
+            "Producers (A)": st.session_state.hist_A,
+            "Consumers (B)": st.session_state.hist_B
+        }).melt("Time", var_name="Species", value_name="Population")
 
         chart = alt.Chart(df).mark_line().encode(
-            x='Time', y='Population', color='Species'
-        ).properties(height=250)
+            x="Time", y="Population", color="Species"
+        ).properties(title="Global Population Dynamics")
 
-        chart_placeholder.altair_chart(chart, use_container_width=True)
+        chart_ph.altair_chart(chart, use_container_width=True)
 
 
 if __name__ == "__main__":
