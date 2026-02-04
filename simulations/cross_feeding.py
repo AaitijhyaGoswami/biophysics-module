@@ -59,7 +59,6 @@ def app():
     st.sidebar.subheader("Population Parameters")
     rA = st.sidebar.slider("Growth Rate of A", 0.0, 1.0, 0.1, step=0.01)
     rB = st.sidebar.slider("Growth Rate of B", 0.0, 2.0, 0.8, step=0.01)
-    dA = st.sidebar.slider("Mortality of A due to Y", 0.0, 1.0, 0.5, step=0.01)
     dB = st.sidebar.slider("Mortality Rate of B", 0.0, 0.1, 0.02, step=0.001)
 
     st.sidebar.subheader("Chemical Parameters")
@@ -91,11 +90,9 @@ def app():
     if st.sidebar.button("Reset Simulation"):
         reset(); st.rerun()
 
-    col1, col2, col3 = st.columns(3)
-    ph_species = col1.empty()
-    ph_X = col2.empty()
-    ph_Y = col3.empty()
-    chart_ph = st.empty()
+    col1, col2 = st.columns([1.5, 1])
+    dish = col1.empty()
+    chart_ph = col2.empty()
 
     run = st.toggle("Run Simulation", False)
 
@@ -115,11 +112,9 @@ def app():
             maskA = grid == A
             maskB = grid == B
 
-            # secretion
             X += P_X * maskA
             Y += P_Y * maskB
 
-            # diffusion + decay
             X += D * laplacian(X) - decay_x * X
             Y += D * laplacian(Y) - decay_y * Y
 
@@ -127,7 +122,6 @@ def app():
             Y = np.clip(Y, 0, 1)
 
             rand = np.random.rand(GRID, GRID)
-
             grid[(maskA) & (rand < toxicity * Y)] = EMPTY
             grid[(maskB) & (rand < dB)] = EMPTY
 
@@ -151,16 +145,18 @@ def app():
         st.rerun()
 
     grid = st.session_state.grid
-    X = st.session_state.X
     Y = st.session_state.Y
 
     img = np.zeros((GRID, GRID, 3))
-    img[grid == A] = [1, 0.2, 0.2]
-    img[grid == B] = [0.2, 1, 0.2]
+    img[grid == A] = [1.0, 0.2, 0.2]
+    img[grid == B] = [0.2, 1.0, 0.2]
 
-    ph_species.image(img, caption="Species Distribution", use_column_width=True)
-    ph_X.image(X, caption="Nutrient Field X", clamp=True, use_column_width=True)
-    ph_Y.image(Y, caption="Poison Field Y", clamp=True, use_column_width=True)
+    empty = (grid == EMPTY)
+    poison = np.clip(Y / (Y.max() + 1e-9), 0, 0.8)
+    img[empty, 2] = poison[empty]
+    img[empty, 0] = poison[empty] * 0.6
+
+    dish.image(img, caption="Species + Poison Field (Y)", clamp=True, use_column_width=True)
 
     if st.session_state.hist_time:
         df = pd.DataFrame({
