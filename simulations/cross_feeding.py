@@ -90,23 +90,36 @@ def app():
     if st.sidebar.button("Reset Simulation"):
         reset(); st.rerun()
 
-    # ---------------- Layout with Figure Labels ----------------
-    col_main, col_plots = st.columns([1.5, 1])
+    # ---------------- Layout ----------------
+    row1 = st.columns(3)
+    row2 = st.columns(1)
 
-    with col_main:
-        st.markdown("### Figure 1 — Spatial Species Distribution")
+    with row1[0]:
+        st.markdown("### Fig. 1 — Species Distribution")
         st.markdown("""
-        <div style='display:flex;gap:18px;font-size:14px;margin-bottom:8px;'>
-            <div><span style='color:#FF4444;font-size:20px'>■</span> Producers (A)</div>
-            <div><span style='color:#44FF44;font-size:20px'>■</span> Consumers (B)</div>
-            <div><span style='color:#8888FF;font-size:20px'>☁</span> Poison Field (Y)</div>
+        <div style='display:flex;gap:14px;font-size:13px;margin-bottom:6px;'>
+            <div><span style='color:#FF4444;font-size:18px'>■</span> Producers (A)</div>
+            <div><span style='color:#44FF44;font-size:18px'>■</span> Consumers (B)</div>
         </div>
         """, unsafe_allow_html=True)
-        dish = st.empty()
+        ph_species = st.empty()
 
-    with col_plots:
-        st.markdown("### Figure 2 — Global Population Dynamics")
-        chart_ph = st.empty()
+    with row1[1]:
+        st.markdown("### Fig. 2 — Nutrient Field (X)")
+        ph_X = st.empty()
+
+    with row1[2]:
+        st.markdown("### Fig. 3 — Poison Field (Y)")
+        st.markdown("""
+        <div style='display:flex;gap:14px;font-size:13px;margin-bottom:6px;'>
+            <div><span style='color:#8888FF;font-size:18px'>☁</span> Poison Concentration</div>
+        </div>
+        """, unsafe_allow_html=True)
+        ph_Y = st.empty()
+
+    with row2[0]:
+        st.markdown("### Fig. 4 — Global Population Dynamics")
+        ph_chart = st.empty()
 
     run = st.toggle("Run Simulation", False)
 
@@ -160,18 +173,18 @@ def app():
 
     # ---------------- Render ----------------
     grid = st.session_state.grid
+    X = st.session_state.X
     Y = st.session_state.Y
 
     img = np.zeros((GRID, GRID, 3))
     img[grid == A] = [1.0, 0.2, 0.2]
     img[grid == B] = [0.2, 1.0, 0.2]
+    ph_species.image(img, clamp=True, use_column_width=True)
 
-    empty = (grid == EMPTY)
-    poison = np.clip(Y / (Y.max() + 1e-9), 0, 0.8)
-    img[empty, 2] = poison[empty]
-    img[empty, 0] = poison[empty] * 0.6
+    ph_X.image(X / (X.max() + 1e-9), caption="Nutrient X", clamp=True, use_column_width=True)
 
-    dish.image(img, clamp=True, use_column_width=True)
+    Y_norm = Y / (Y.max() + 1e-9)
+    ph_Y.image(Y_norm, caption="Poison Y", clamp=True, use_column_width=True)
 
     if st.session_state.hist_time:
         df = pd.DataFrame({
@@ -184,7 +197,7 @@ def app():
             x="Time", y="Population", color="Species"
         )
 
-        chart_ph.altair_chart(chart, use_container_width=True)
+        ph_chart.altair_chart(chart, use_container_width=True)
 
 
 if __name__ == "__main__":
