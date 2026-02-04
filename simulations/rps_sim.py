@@ -1,8 +1,8 @@
+
 import streamlit as st
 import numpy as np
 import pandas as pd
 import altair as alt
-import time
 
 
 def app():
@@ -37,6 +37,7 @@ def app():
     st.markdown("## Mathematical Model")
 
     st.latex(r"S(x,y,t) \in \{0,R,B,G\}")
+
     st.latex(r"R \succ G,\quad G \succ B,\quad B \succ R")
 
     st.latex(r"""
@@ -82,7 +83,7 @@ def app():
 
     EMPTY, RED, BLUE, GREEN = 0, 1, 2, 3
 
-    if "rps_initialized" not in st.session_state:
+    if "rps_grid" not in st.session_state:
         st.session_state.rps_initialized = False
 
     def reset_simulation():
@@ -130,13 +131,12 @@ def app():
 
     st.markdown("**RGB legend:** 🔴 Toxic | 🟢 Sensitive | 🔵 Resistive")
 
-    # ---------------- REAL-TIME SIMULATION ----------------
+    # ---------------- SIMULATION ----------------
     if run_sim:
         grid = st.session_state.rps_grid
         mask = st.session_state.rps_mask
 
         for _ in range(steps_per_frame):
-
             dx = np.random.randint(-1, 2, size=(GRID, GRID))
             dy = np.random.randint(-1, 2, size=(GRID, GRID))
 
@@ -165,10 +165,15 @@ def app():
 
             grid[~mask] = EMPTY
 
-            st.session_state.rps_time += 1
-            st.session_state.rps_grid = grid
+        st.session_state.rps_time += steps_per_frame
 
-            time.sleep(0.02)
+        st.session_state.rps_hist_time.append(st.session_state.rps_time)
+        st.session_state.rps_hist_red.append(np.sum(grid == RED))
+        st.session_state.rps_hist_blue.append(np.sum(grid == BLUE))
+        st.session_state.rps_hist_green.append(np.sum(grid == GREEN))
+
+        st.session_state.rps_grid = grid
+        st.rerun()
 
     # ---------------- VISUAL ----------------
     grid = st.session_state.rps_grid
@@ -183,12 +188,6 @@ def app():
     dish_placeholder.image(img, caption=f"Time step: {st.session_state.rps_time}", use_column_width=True)
 
     # ---------------- PLOTS ----------------
-    if st.session_state.rps_time % 5 == 0:
-        st.session_state.rps_hist_time.append(st.session_state.rps_time)
-        st.session_state.rps_hist_red.append(np.sum(grid == RED))
-        st.session_state.rps_hist_blue.append(np.sum(grid == BLUE))
-        st.session_state.rps_hist_green.append(np.sum(grid == GREEN))
-
     if st.session_state.rps_hist_time:
         df = pd.DataFrame({
             'Time': st.session_state.rps_hist_time,
@@ -216,12 +215,13 @@ def app():
             x='Time', y='Fraction', color='Strain'
         ).properties(height=200)
         chart_fracs.altair_chart(chart_f, use_container_width=True)
-
         st.markdown("---")
         st.markdown(
-            "**Numerics:** stochastic lattice updates, nearest-neighbor sampling, Bernoulli reproduction, cyclic dominance rules, circular domain mask."
+        "**Numerics:** stochastic lattice updates, nearest-neighbor sampling, Bernoulli reproduction, cyclic dominance rules, circular domain mask."
         )
 
 
 if __name__ == "__main__":
     app()
+
+
