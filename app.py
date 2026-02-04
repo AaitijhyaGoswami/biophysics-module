@@ -41,7 +41,7 @@ except ImportError:
 
 try:
     from simulations import cross_feeding
-    modules["Cross-Feeding"] = cross_feeding
+    modules["Syntrophy"] = cross_feeding
 except ImportError:
     pass
 
@@ -131,7 +131,7 @@ if page == "Home":
 
     # 5. Cross-Feeding (Syntrophy)
     st.markdown("""
-    ### **5. Cross-Feeding (Syntrophy)**
+    ### **5. Syntrophy**
     - **Abstract:** Cross-feeding, or metabolic interdependence, is a phenomenon where one organism produces a 
       resource that another consumes. This simulation illustrates spatiotemporal dynamics of producers (A) 
       secreting a nutrient (X), and consumers (B) that consume X while producing a toxin (Y) that affects A. The 
