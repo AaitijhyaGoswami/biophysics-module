@@ -95,7 +95,6 @@ def app():
     ph_species = col1.empty()
     ph_X = col2.empty()
     ph_Y = col3.empty()
-
     chart_ph = st.empty()
 
     run = st.toggle("Run Simulation", False)
@@ -116,9 +115,11 @@ def app():
             maskA = grid == A
             maskB = grid == B
 
+            # secretion
             X += P_X * maskA
             Y += P_Y * maskB
 
+            # diffusion + decay
             X += D * laplacian(X) - decay_x * X
             Y += D * laplacian(Y) - decay_y * Y
 
@@ -126,6 +127,7 @@ def app():
             Y = np.clip(Y, 0, 1)
 
             rand = np.random.rand(GRID, GRID)
+
             grid[(maskA) & (rand < toxicity * Y)] = EMPTY
             grid[(maskB) & (rand < dB)] = EMPTY
 
