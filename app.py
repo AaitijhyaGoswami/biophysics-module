@@ -77,6 +77,8 @@ if page == "Home":
     of stochastic and deterministic principles to explore emergent behaviors of individual species and populations.
     """)
 
+    st.info("**Click on the hyperlinks below to learn more!**")
+
     st.markdown("## The Modules")
     st.markdown("---")
 
@@ -118,7 +120,7 @@ if page == "Home":
 
     # 4. Cyclic Dominance
     st.markdown("""
-    ### **4. Cyclic Dominance**
+    ### **4. [Cyclic Dominance](https://arxiv.org/abs/1408.6828)**
     - **Abstract:** This module captures non-transitive interactions (e.g., A beats B, B beats C, C beats A),
       typical of ecosystems characterized by cyclic dominance. The model uses stochastic spatial lattice 
       updates to reveal the emergence of spiral waves and the preservation of biodiversity via non-transitive
@@ -131,7 +133,7 @@ if page == "Home":
 
     # 5. Cross-Feeding (Syntrophy)
     st.markdown("""
-    ### **5. Syntrophy**
+    ### **5. [Syntrophy](https://en.wikipedia.org/wiki/Syntrophy)**
     - **Abstract:** Cross-feeding, or metabolic interdependence, is a phenomenon where one organism produces a 
       resource that another consumes. This simulation illustrates spatiotemporal dynamics of producers (A) 
       secreting a nutrient (X), and consumers (B) that consume X while producing a toxin (Y) that affects A. The 
