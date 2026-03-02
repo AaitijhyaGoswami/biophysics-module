@@ -5,7 +5,7 @@ import altair as alt
 
 def app():
     st.set_page_config(page_title="Cyclic Dominance Simulator", layout="wide")
-    st.title("🧫 Cyclic Dominance (Rock–Paper–Scissors)")
+    st.title("Cyclic Dominance (Rock–Paper–Scissors)")
     st.subheader("A Spatial Non-Transitive Competition Model")
 
     st.markdown("""
