@@ -6,17 +6,43 @@ import plotly.graph_objects as go
 from scipy.ndimage import gaussian_filter
 
 def app():
-    st.title("Stochastic Bacterial Colony Growth")
+    st.set_page_config(page_title="Stochastic Bacterial Simulator", layout="wide")
+    st.title("🧫 Stochastic Bacterial Colony Growth")
     st.subheader("Reaction–Diffusion + Stochastic Tip-Driven Branching")
 
+    # ---------------- INTRODUCTORY TEXT ----------------
     st.markdown("""
-    This simulator models **nutrient-limited bacterial colonies**
-    with **diffusion, stochastic tip growth, and lineage tracking**.
-    Branching morphologies emerge from noise-driven local instabilities.
+    This advanced simulator models the emergence of complex, fractal-like structures in **nutrient-limited bacterial colonies**. 
+    Unlike simple growth models, this system simulates the interplay between metabolic consumption, spatial diffusion, 
+    and the stochastic (random) nature of biological branching. 
+    
+    As the bacteria consume local nutrients, they create a depletion zone, forcing the colony to "reach" outward. 
+    The resulting **morphogenesis**—the birth of shape—is driven by small fluctuations at the colony's edge, 
+    amplified by the physics of the environment.
     """)
+
+    ### Applications & Research Fields
+    with st.expander("Explore Applications & Scientific Relevance", expanded=True):
+        col_info1, col_info2 = st.columns(2)
+        with col_info1:
+            st.markdown("""
+            **Biological Research**
+            * **Pattern Formation:** Studying how *Paenibacillus dendritiformis* or *Bacillus subtilis* create intricate dendritic patterns.
+            * **Quorum Sensing:** Modeling how local density affects growth signals and survival strategies.
+            * **Metabolic Competition:** Visualizing how different lineages (colored seeds) compete for a finite nutrient pool.
+            """)
+        with col_info2:
+            st.markdown("""
+            **Computational & Clinical Use**
+            * **Biofilm Engineering:** Predicting the structural integrity and growth limits of bacterial films on medical devices.
+            * **Antimicrobial Testing:** Simulating how diffusion barriers impact the efficacy of treatments in dense colonies.
+            * **Mathematical Ecology:** Applying Reaction-Diffusion equations to understand invasive species spread in heterogeneous landscapes.
+            """)
 
     # ---------------- THEORY ----------------
     st.markdown("### Governing Equations")
+    
+    
 
     st.latex(r"\frac{\partial B}{\partial t}=D_B\nabla^2B + r B(1-B)F \,\Phi(x,y,t)")
     st.latex(r"\frac{\partial F}{\partial t}=D_F\nabla^2F - \lambda B F")
@@ -271,7 +297,7 @@ def app():
 
     st.markdown("---")
     st.markdown("""
-    **Numerics:** Forward Euler diffusion, stochastic branching,
+    **Numerics:** Forward Euler diffusion, stochastic branching, 
     tip amplification, lineage tracking, 3D biomass projection.
     """)
 
