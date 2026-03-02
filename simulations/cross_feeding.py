@@ -6,7 +6,7 @@ import altair as alt
 
 def app():
     st.set_page_config(page_title="Microbial Cross-Feeding Simulator", layout="wide")
-    st.title("🧫 Chemically Mediated Cross-Feeding")
+    st.title("Chemically Mediated Cross-Feeding")
     st.subheader("A Spatial Model for Two Mutualistic Species")
 
     # ---------------- DETAILED INTRODUCTORY TEXT ----------------
