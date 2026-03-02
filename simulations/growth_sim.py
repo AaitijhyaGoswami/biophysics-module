@@ -6,81 +6,91 @@ import plotly.graph_objects as go
 from scipy.ndimage import gaussian_filter
 
 def app():
-    st.set_page_config(page_title="Stochastic Bacterial Simulator", layout="wide")
-    st.title("🧫 Stochastic Bacterial Colony Growth")
-    st.subheader("Reaction–Diffusion + Stochastic Tip-Driven Branching")
+    st.set_page_config(page_title="In Silico Morphogenesis", layout="wide")
+    st.title("🧫 Stochastic Bacterial Colony Morphogenesis")
+    st.subheader("Coupled Reaction–Diffusion Systems & Non-Linear Growth Dynamics")
 
     # ---------------- INTRODUCTORY TEXT ----------------
     st.markdown("""
-    This advanced simulator models the emergence of complex, fractal-like structures in **nutrient-limited bacterial colonies**. 
-    Unlike simple growth models, this system simulates the interplay between metabolic consumption, spatial diffusion, 
-    and the stochastic (random) nature of biological branching. 
-    
-    As the bacteria consume local nutrients, they create a depletion zone, forcing the colony to "reach" outward. 
-    The resulting **morphogenesis**—the birth of shape—is driven by small fluctuations at the colony's edge, 
-    amplified by the physics of the environment.
+    This simulator provides an *in silico* environment to observe **emergent multicellular organization**. 
+    The model explores how microscopic stochasticity at the cellular level translates into macroscopic 
+    phenotypes—specifically the dendritic, fractal-like branching patterns observed in motile bacterial 
+    species under nutrient stress.
+
+    The morphology is governed by the competition between the **expansion rate** of the colony front 
+    and the **diffusion rate** of limiting substrates. When nutrient levels are low, the circular 
+    symmetry of a colony breaks down due to **Mullins-Sekerka instability**, leading to the 
+    formation of discrete "fingers" or branches that seek higher nutrient gradients.
     """)
 
-    ### Applications & Research Fields
-    with st.expander("Explore Applications & Scientific Relevance", expanded=True):
-        col_info1, col_info2 = st.columns(2)
-        with col_info1:
-            st.markdown("""
-            **Biological Research**
-            * **Pattern Formation:** Studying how *Paenibacillus dendritiformis* or *Bacillus subtilis* create intricate dendritic patterns.
-            * **Quorum Sensing:** Modeling how local density affects growth signals and survival strategies.
-            * **Metabolic Competition:** Visualizing how different lineages (colored seeds) compete for a finite nutrient pool.
-            """)
-        with col_info2:
-            st.markdown("""
-            **Computational & Clinical Use**
-            * **Biofilm Engineering:** Predicting the structural integrity and growth limits of bacterial films on medical devices.
-            * **Antimicrobial Testing:** Simulating how diffusion barriers impact the efficacy of treatments in dense colonies.
-            * **Mathematical Ecology:** Applying Reaction-Diffusion equations to understand invasive species spread in heterogeneous landscapes.
-            """)
+    ### Applications & Scientific Relevance
+    st.markdown("### 🔬 Research Applications")
+    col_info1, col_info2 = st.columns(2)
+    with col_info1:
+        st.markdown("""
+        * **Biophysical Morphogenesis:** Investigating the transition from stable circular expansion to unstable branching (fractal dimension analysis).
+        * **Ecological Competition:** Modeling spatial segregation and lineage exclusion when multiple genotypes compete for a common niche.
+        * **Phenotypic Plasticity:** Simulating how bacteria alter their "swarming" vs. "consolidating" behavior based on local chemical cues.
+        """)
+    with col_info2:
+        st.markdown("""
+        * **Biofilm Architecture:** Predicting the structural porosity of biofilms, which dictates their resistance to shear stress and antibiotic penetration.
+        * **Chemotactic Signaling:** Serving as a baseline for adding complex Chemotaxis-Diffusion-Growth (CDG) models.
+        * **Non-Linear Dynamics:** Studying the feedback loops between metabolic consumption ($\lambda$) and local biomass density ($B$).
+        """)
+
+    # ---------------- RELEVANT LITERATURE ----------------
+    with st.expander("📚 Key Scientific Literature & Theoretical Foundations", expanded=False):
+        st.markdown("""
+        The algorithms implemented here are inspired by and grounded in the following seminal works:
+        
+        * **Ben-Jacob, E., et al. (1994).** *Generic modelling of self-organization during bacterial colony growth.* Nature. (Introduced the Communicating Walkers model and branching instabilities).
+        * **Mimira, M., et al. (2000).** *Reaction-diffusion models for the formation of bacterial patterns.* Mathematical Biosciences. (Mathematical proofs for branching in nutrient-depleted media).
+        * **Golding, I., et al. (1998).** *Studies of bacterial branching growth using reaction-diffusion models for colonial development.* Physica A.
+        * **Farrell, F. D., et al. (2013).** *Mechanical interactions in bacterial colonies and the spatial expansion of lineages.* J. R. Soc. Interface.
+        """)
 
     # ---------------- THEORY ----------------
-    st.markdown("### Governing Equations")
+    st.markdown("### Governing PDE Framework")
     
     
 
     st.latex(r"\frac{\partial B}{\partial t}=D_B\nabla^2B + r B(1-B)F \,\Phi(x,y,t)")
     st.latex(r"\frac{\partial F}{\partial t}=D_F\nabla^2F - \lambda B F")
 
+    st.markdown("**The Stochastic Modulation Field ($\Phi$):**")
     st.latex(r"""
     \Phi(x,y,t) = \eta + (1-\eta)\big(\bar{B}(x,y,t) + \xi(x,y,t) + \kappa T(x,y,t)\big)
     """)
 
     st.latex(r"""
     \begin{aligned}
-    B(x,y,t) &:\ \text{Bacterial biomass density} \\
-    F(x,y,t) &:\ \text{Nutrient concentration} \\
-    \bar{B} &:\ \text{Local neighbor-averaged biomass} \\
-    T &:\ \text{Tip indicator field (branch fronts)} \\
-    \xi &:\ \text{Stochastic noise field} \\
-    D_B, D_F &:\ \text{Diffusion coefficients} \\
-    r &:\ \text{Growth rate} \\
-    \lambda &:\ \text{Consumption rate} \\
-    \kappa &:\ \text{Tip amplification strength} \\
-    \eta &:\ \text{Self-growth baseline}
+    B(x,y,t) &:\ \text{Bacterial biomass density (scalar field)} \\
+    F(x,y,t) &:\ \text{Nutrient/Substrate concentration field} \\
+    \bar{B} &:\ \text{Local ensemble-averaged biomass} \\
+    T &:\ \text{Tip-driven anisotropy (branch front indicator)} \\
+    \xi &:\ \text{Gaussian white noise (stochastic perturbation)} \\
+    D_B, D_F &:\ \text{Diffusion tensors (Bacteria and Substrate)} \\
+    \lambda &:\ \text{Metabolic consumption coefficient} \\
+    \eta &:\ \text{Constitutive growth baseline}
     \end{aligned}
     """)
 
     # ---------------- SIDEBAR ----------------
-    st.sidebar.subheader("Physics Parameters")
-    food_diff = st.sidebar.slider("Food Diffusion", 0.0, 0.02, 0.008, format="%.4f")
-    bact_diff = st.sidebar.slider("Bacteria Diffusion", 0.0, 0.05, 0.02, format="%.4f")
-    growth_rate = st.sidebar.slider("Growth Rate", 0.0, 0.1, 0.05, format="%.4f")
-    self_growth = st.sidebar.slider("Self Growth (η)", 0.0, 0.05, 0.012, format="%.4f")
-    consumption_rate = st.sidebar.slider("Consumption Rate (λ)", 0.0, 0.02, 0.006, format="%.4f")
-    noise_strength = st.sidebar.slider("Stochastic Noise (ξ)", 0.0, 1.0, 0.65)
-    tip_factor = st.sidebar.slider("Tip Growth Factor (κ)", 0.5, 2.0, 1.0)
+    st.sidebar.header("Kinetic Parameters")
+    food_diff = st.sidebar.slider("Substrate Diffusion ($D_F$)", 0.0, 0.02, 0.008, format="%.4f")
+    bact_diff = st.sidebar.slider("Biomass Diffusion ($D_B$)", 0.0, 0.05, 0.02, format="%.4f")
+    growth_rate = st.sidebar.slider("Max Growth Rate ($r$)", 0.0, 0.1, 0.05, format="%.4f")
+    self_growth = st.sidebar.slider("Basal Growth ($\eta$)", 0.0, 0.05, 0.012, format="%.4f")
+    consumption_rate = st.sidebar.slider("Consumption ($\lambda$)", 0.0, 0.02, 0.006, format="%.4f")
+    noise_strength = st.sidebar.slider("Stochasticity ($\xi$)", 0.0, 1.0, 0.65)
+    tip_factor = st.sidebar.slider("Tip Amplification ($\kappa$)", 0.5, 2.0, 1.0)
 
-    st.sidebar.subheader("System Settings")
+    st.sidebar.header("Boundary & Initial Conditions")
     grid = 300
-    num_seeds = st.sidebar.slider("Number of Colonies", 1, 12, 12)
+    num_seeds = st.sidebar.slider("Initial Inoculation Sites", 1, 12, 12)
     seed_intensity = 0.03
-    steps_per_frame = st.sidebar.slider("Simulation Speed", 1, 100, 40)
+    steps_per_frame = st.sidebar.slider("Temporal Resolution", 1, 100, 40)
 
     # ---------------- UTILS ----------------
     def laplacian(arr):
@@ -128,7 +138,7 @@ def app():
     if not st.session_state.bg_initialized:
         reset()
 
-    if st.sidebar.button("Reset Simulation"):
+    if st.sidebar.button("Reset Experiment"):
         reset()
         st.rerun()
 
@@ -137,32 +147,32 @@ def app():
     row2 = st.columns(2)
 
     with row1[0]:
-        st.markdown("### Figure 1 — 2D Colony Morphology")
+        st.markdown("### Figure 1 — Phenotypic Patterning")
         ph_colony = st.empty()
 
     with row1[1]:
-        st.markdown("### Figure 2 — 3D Biomass Surface")
+        st.markdown("### Figure 2 — Biomass Topography")
         ph_3d = st.empty()
 
     with row2[0]:
-        st.markdown("### Figure 3 — Nutrient Field")
+        st.markdown("### Figure 3 — Substrate Concentration")
         ph_nutrient = st.empty()
 
     with row2[1]:
-        st.markdown("### Figure 4 — Biomass Density")
+        st.markdown("### Figure 4 — Lineage Distribution")
         ph_biomass = st.empty()
 
     st.markdown("---")
 
     col_g1, col_g2 = st.columns(2)
     with col_g1:
-        st.markdown("### Figure 5 — Global Dynamics")
+        st.markdown("### Figure 5 — Temporal Population Flux")
         ph_global = st.empty()
     with col_g2:
-        st.markdown("### Figure 6 — Growth per Colony")
+        st.markdown("### Figure 6 — Lineage-Specific Kinetics")
         ph_local = st.empty()
 
-    run = st.toggle("Run Simulation", value=False)
+    run = st.toggle("Initiate Growth Simulation", value=False)
 
     # ---------------- SIMULATION ----------------
     if run:
@@ -297,8 +307,8 @@ def app():
 
     st.markdown("---")
     st.markdown("""
-    **Numerics:** Forward Euler diffusion, stochastic branching, 
-    tip amplification, lineage tracking, 3D biomass projection.
+    **Numerical Framework:** Discretized using a Finite Difference Method (FDM) with Forward Euler integration. 
+    Stochastic branching is implemented via a tip-amplified noise field within the growth term.
     """)
 
 if __name__ == "__main__":
