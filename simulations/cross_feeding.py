@@ -5,17 +5,47 @@ import altair as alt
 
 
 def app():
-    st.set_page_config(layout="wide")
-    st.title("Chemically Mediated Cross-Feeding")
+    st.set_page_config(page_title="Microbial Cross-Feeding Simulator", layout="wide")
+    st.title("🧫 Chemically Mediated Cross-Feeding")
     st.subheader("A Spatial Model for Two Mutualistic Species")
 
+    # ---------------- DETAILED INTRODUCTORY TEXT ----------------
     st.markdown("""
-    This simulator models **chemical-mediated mutualism** between two interacting species:  
-    - Species **A** produces a nutrient (**X**) that is consumed by species **B**.  
-    - Species **B** produces a toxin (**Y**) that negatively affects species **A**.  
+    This simulator models **chemical-mediated mutualism and antagonism** between two interacting microbial species. 
+    In natural ecosystems, microbes rarely exist in isolation; they create complex **metabolic markets** where 
+    the byproduct of one organism becomes the primary energy source for another—a process known as **syntrophy**.
 
-    The spatial interaction between the two species and their metabolic byproducts (**X** and **Y**) creates distinct population dynamics and chemical distributions.
+    However, these interactions are rarely purely beneficial. The spatial architecture of a microbial community 
+    (like a biofilm or soil crust) is defined by the tension between **cooperation (nutrient supply)** and 
+    **competition (toxic stress)**. As metabolites diffuse through the medium, they create "chemical landscapes" 
+    that determine where a species can thrive and where it will face extinction.
     """)
+
+    # ---------------- APPLICATIONS & RESEARCH ----------------
+    with st.expander("Explore Applications & Scientific Relevance", expanded=True):
+        col_info1, col_info2 = st.columns(2)
+        with col_info1:
+            st.markdown("""
+            **Systems Biology & Ecology**
+            * **Syntrophy & Energy Flux:** Studying how bacteria like *Syntrophomonas* rely on methanogens to consume hydrogen, keeping metabolic reactions thermodynamically favorable.
+            * **Gut Microbiome Dynamics:** Modeling how different bacterial phyla (e.g., *Bacteroidetes* and *Firmicutes*) share breakdown products of complex dietary fibers.
+            * **Spatial Segregation:** Investigating how toxic gradients force species to cluster together for protection or separate into distinct territorial domains.
+            """)
+        with col_info2:
+            st.markdown("""
+            **Biotechnology & Synthetic Biology**
+            * **Consortia Design:** Engineering "division of labor" in industrial bioreactors where multiple strains handle different steps of a complex fermentation process.
+            * **Bioremediation:** Predicting how specialized microbes cooperate to break down environmental pollutants like crude oil or toxic hydrocarbons.
+            * **Antimicrobial Resistance:** Understanding how cross-feeding can protect sensitive species from antibiotics through metabolic "shielding" or detoxifying waste.
+            """)
+
+    st.markdown("### Theoretical Framework")
+    st.markdown("""
+    The model utilizes a **hybrid approach**: a discrete stochastic lattice for the individuals (Species A and B) 
+    coupled with continuous partial differential equations (PDEs) for the chemical fields (Nutrient X and Toxin Y).
+    """)
+
+    
 
     # ---------------- GOVERNING EQUATIONS ----------------
     st.markdown("### Governing Equations")
@@ -49,6 +79,8 @@ def app():
     d_B &:\ \text{Mortality rate of consumers (starvation)}
     \end{aligned}
     """)
+
+    
 
     # ---------------- SIDEBAR ----------------
     st.sidebar.subheader("Ecosystem Parameters")
@@ -199,6 +231,11 @@ def app():
 
         ph_chart.altair_chart(chart, use_container_width=True)
 
+    st.markdown("---")
+    st.markdown("""
+    **Numerics:** Hybrid Stochastic Lattice Automata (for species) and Finite-Difference Method (for chemicals). 
+    Supports Neumann boundary conditions (periodic wrapping) and Forward Euler time-stepping.
+    """)
 
 if __name__ == "__main__":
     app()
