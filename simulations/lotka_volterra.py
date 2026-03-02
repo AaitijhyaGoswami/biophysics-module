@@ -5,7 +5,7 @@ import altair as alt
 
 def app():
     st.set_page_config(page_title="Chemotaxis Predator-Prey", layout="wide")
-    st.title("🧫 Spatial Chemotaxis Predator–Prey")
+    st.title("Spatial Chemotaxis Predator–Prey")
     st.subheader("Reaction–Diffusion–Chemotaxis System in a Circular Domain")
 
     st.markdown("""
@@ -15,7 +15,7 @@ def app():
     and collapse zones.
     """)
 
-    # ---------------- APPLICATIONS ----------------
+    # ---------------- APPLICATIONS (NO EXPANDER) ----------------
     st.markdown("### 🔬 Research & Biological Applications")
     col_app1, col_app2 = st.columns(2)
     with col_app1:
