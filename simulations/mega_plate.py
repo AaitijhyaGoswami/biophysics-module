@@ -56,13 +56,36 @@ def run_coarse(nu, p, steps=120, size=60):
 
 # ================= main app =================
 def app():
-    st.title("The MEGA Plate Experiment")
+    st.set_page_config(page_title="MEGA Plate Evolution", layout="wide")
+    st.title("🧫 The MEGA Plate Experiment")
     st.subheader("A Spatial Reaction–Selection–Mutation Model")
 
     st.markdown("""
     This simulator models **stepwise antibiotic resistance evolution**
-    across spatial drug gradients using discrete stochastic dynamics.
+    across spatial drug gradients using discrete stochastic dynamics. It is inspired by the Harvard 
+    Medical School "MEGA-plate" (Microbial Evolution and Growth Arena), which demonstrates how 
+    bacteria migrate into increasing concentrations of antibiotics through successive mutations.
     """)
+
+    # ---------------- APPLICATIONS & RESEARCH ----------------
+    with st.expander("Explore Applications & Scientific Relevance", expanded=True):
+        col_info1, col_info2 = st.columns(2)
+        with col_info1:
+            st.markdown("""
+            **Evolutionary Biology**
+            * **Fitness Landscapes:** Visualizing how spatial heterogeneity provides "stepping stones" for bacteria to reach high-fitness peaks.
+            * **Clonal Interference:** Observing how different mutant lineages compete spatially for the same resources.
+            * **Adaptive Radiation:** Studying how populations diversify as they encounter new environmental stressors.
+            """)
+        with col_info2:
+            st.markdown("""
+            **Public Health & Pharmacology**
+            * **Antibiotic Stewardship:** Understanding why low-dose "sub-inhibitory" concentrations accelerate the emergence of superbugs.
+            * **Drug Design:** Simulating multi-drug gradients to test "collateral sensitivity," where resistance to one drug makes bacteria weaker against another.
+            * **Infection Control:** Modeling how spatial barriers in the body (like tissue density) affect bacterial spread.
+            """)
+
+    [attachment_0](attachment)
 
     # ---------------- Mathematical model ----------------
     st.markdown("## Mathematical Model")
@@ -253,6 +276,9 @@ def app():
         ).properties(height=250)
 
         g3.altair_chart(phase_chart, use_container_width=True)
+
+    st.markdown("---")
+    st.markdown("**Numerics:** Discrete time stochastic cellular automata. Antibiotic boundaries defined by radial thresholding.")
 
 if __name__ == "__main__":
     app()
