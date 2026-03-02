@@ -57,7 +57,7 @@ def run_coarse(nu, p, steps=120, size=60):
 # ================= main app =================
 def app():
     st.set_page_config(page_title="MEGA Plate Evolution", layout="wide")
-    st.title("🧫 The MEGA Plate Experiment")
+    st.title("The MEGA Plate Experiment")
     st.subheader("A Spatial Reaction–Selection–Mutation Model")
 
     st.markdown("""
