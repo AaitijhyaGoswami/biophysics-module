@@ -1,19 +1,41 @@
-
 import streamlit as st
 import numpy as np
 import pandas as pd
 import altair as alt
 
-
 def app():
-    st.title("Cyclic Dominance (Rock–Paper–Scissors)")
+    st.set_page_config(page_title="Cyclic Dominance Simulator", layout="wide")
+    st.title("🧫 Cyclic Dominance (Rock–Paper–Scissors)")
     st.subheader("A Spatial Non-Transitive Competition Model")
 
     st.markdown("""
-    This simulator models **cyclic ecological dominance**
-    observed in colicin-producing *E. coli* strains.
-    Local interactions generate spiral waves and long-term coexistence.
+    This simulator models **cyclic ecological dominance** observed in biological systems, such as 
+    colicin-producing *E. coli* strains. In these systems, species competition does not follow a 
+    linear hierarchy but a non-transitive loop: **A beats B, B beats C, and C beats A.**
+    
+    In a spatial context, these local interactions prevent any single species from achieving total 
+    monopoly, instead generating dynamic **spiral waves** and long-term stable coexistence.
     """)
+
+    # ---------------- APPLICATIONS & RESEARCH ----------------
+    with st.expander("Explore Applications & Scientific Relevance", expanded=True):
+        col_info1, col_info2 = st.columns(2)
+        with col_info1:
+            st.markdown("""
+            **Microbiology & Genetics**
+            * **Colicin Systems:** Studying the three-way competition between *Toxic* (produces toxin), *Sensitive* (killed by toxin), and *Resistant* (immune but grows slower) bacteria.
+            * **Microbial Diversity:** Understanding how non-transitive loops maintain high biodiversity in soil and gut microbiomes.
+            * **Evolutionary Stable Strategies (ESS):** Testing how spatial clustering affects the survival of "cheaters" or "altruists."
+            """)
+        with col_info2:
+            st.markdown("""
+            **Ecology & Game Theory**
+            * **Side-blotched Lizards:** Modeling the three mating strategies (Orange, Blue, and Yellow throats) that follow RPS rules in nature.
+            * **Coral Reef Dynamics:** Analyzing space-competition among coral species that exhibit cyclic overgrowth.
+            * **Sociophysics:** Applying cyclic models to understand the propagation of opinions or technologies in social networks.
+            """)
+
+    
 
     # ---------------- GOVERNING EQUATIONS ----------------
     st.markdown("### Governing Equations")
@@ -33,11 +55,12 @@ def app():
     \end{aligned}
     """)
 
+    
+
     # ---------------- MATHEMATICAL MODEL ----------------
-    st.markdown("## Mathematical Model")
+    st.markdown("## Stochastic Lattice Model")
 
     st.latex(r"S(x,y,t) \in \{0,R,B,G\}")
-
     st.latex(r"R \succ G,\quad G \succ B,\quad B \succ R")
 
     st.latex(r"""
@@ -48,24 +71,6 @@ def app():
     st.latex(r"""
     \Pr\big[S(x,y,t+\Delta t)=S(x',y',t)\big]
     = \beta \;\; \text{if } S(x',y',t) \succ S(x,y,t)
-    """)
-
-    st.latex(r"""
-    S(x,y,t+\Delta t)=
-    \begin{cases}
-    S(x',y',t), & \text{reproduction or dominance},\\
-    S(x,y,t), & \text{otherwise}.
-    \end{cases}
-    """)
-
-    st.latex(r"""
-    \begin{aligned}
-    S(x,y,t) &: \text{species at lattice site } (x,y)\\
-    R,G,B &: \text{toxic, sensitive, resistive strains}\\
-    \sigma &: \text{reproduction probability}\\
-    \beta &: \text{interaction (kill) probability}\\
-    (x',y') &: \text{random neighboring site}
-    \end{aligned}
     """)
 
     # ---------------- SIDEBAR ----------------
@@ -129,7 +134,7 @@ def app():
 
     run_sim = st.toggle("Run Simulation", value=False)
 
-    st.markdown("**RGB legend:** 🔴 Toxic | 🟢 Sensitive | 🔵 Resistive")
+    st.markdown("**RGB legend:** 🔴 Toxic (R) | 🟢 Sensitive (G) | 🔵 Resistive (B)")
 
     # ---------------- SIMULATION ----------------
     if run_sim:
@@ -215,13 +220,11 @@ def app():
             x='Time', y='Fraction', color='Strain'
         ).properties(height=200)
         chart_fracs.altair_chart(chart_f, use_container_width=True)
-        st.markdown("---")
-        st.markdown(
-        "**Numerics:** stochastic lattice updates, nearest-neighbor sampling, Bernoulli reproduction, cyclic dominance rules, circular domain mask."
-        )
-
+        
+    st.markdown("---")
+    st.markdown(
+    "**Numerics:** stochastic lattice updates, nearest-neighbor sampling, Bernoulli reproduction, cyclic dominance rules, circular domain mask."
+    )
 
 if __name__ == "__main__":
     app()
-
-
