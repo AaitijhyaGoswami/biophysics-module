@@ -7,7 +7,7 @@ from scipy.ndimage import gaussian_filter
 
 def app():
     st.set_page_config(page_title="Stochastic Bacterial Simulator", layout="wide")
-    st.title("🧫 Stochastic Bacterial Colony Growth")
+    st.title("Stochastic Bacterial Colony Growth")
     st.subheader("Reaction–Diffusion + Stochastic Tip-Driven Branching")
 
     # ---------------- INTRODUCTORY TEXT ----------------
