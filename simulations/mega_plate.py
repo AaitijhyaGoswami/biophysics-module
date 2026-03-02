@@ -85,7 +85,7 @@ def app():
             * **Infection Control:** Modeling how spatial barriers in the body (like tissue density) affect bacterial spread.
             """)
 
-    [attachment_0](attachment)
+    
 
     # ---------------- Mathematical model ----------------
     st.markdown("## Mathematical Model")
