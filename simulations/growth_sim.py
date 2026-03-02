@@ -20,8 +20,7 @@ def app():
 
     The morphology is governed by the competition between the **expansion rate** of the colony front 
     and the **diffusion rate** of limiting substrates. When nutrient levels are low, the circular 
-    symmetry of a colony breaks down due to **Mullins-Sekerka instability**, leading to the 
-    formation of discrete "fingers" or branches that seek higher nutrient gradients.
+    symmetry of a colony breaks down due to **Mullins-Sekerka instability**.
     """)
 
     
@@ -101,7 +100,7 @@ def app():
         st.session_state.pop_history = []
         st.session_state.nut_history = []
         st.session_state.time_axis = []
-        st.session_state.colony_history = {i: [] for i in range(1, 13)}
+        st.session_state.colony_history = {i: [] for i in range(1, 14)}
 
         np.random.seed(int(time.time()))
         for sid in range(1, num_seeds + 1):
@@ -146,13 +145,14 @@ def app():
             B[~M] = 0
             B = np.clip(B, 0, 1)
 
+            # Efficient lineage propagation
             growing_edge = (B > 0.01) & (S == 0)
             if np.any(growing_edge):
                 for sid in range(1, num_seeds + 1):
                     lineage_mask = (S == sid)
                     dilation = (np.roll(lineage_mask,1,0)|np.roll(lineage_mask,-1,0)|
                                 np.roll(lineage_mask,1,1)|np.roll(lineage_mask,-1,1))
-                    S[(dilation) & (S == 0) & (B > 0)] = sid
+                    S[(dilation) & (S == 0) & (B > 0.005)] = sid
 
         st.session_state.time += steps_per_frame
         st.session_state.time_axis.append(st.session_state.time)
@@ -161,11 +161,13 @@ def app():
         for sid in range(1, num_seeds+1):
             st.session_state.colony_history[sid].append(np.sum(B[S==sid]))
 
+        # Mapping colors
         colors = np.array([[0,0,0],[1,0.2,0.2],[0.2,1,0.2],[0.2,0.2,1],[1,1,0.2],[1,0.2,1],[0.2,1,1],[0.7,0.4,0],[0.5,0,0.5],[0,0.5,0.5],[1,0.5,0],[0.5,1,0],[1,0,0.5]])
         img = np.zeros((grid, grid, 3))
         for sid in range(1, num_seeds+1):
+            mask_sid = (S == sid)
             for c in range(3):
-                img[..., c] += (S == sid) * B * colors[sid, c]
+                img[..., c] += mask_sid * B * colors[sid, c]
         img = np.clip(img, 0, 1)
         ph_colony.image(img, caption=f"Morphology at T={st.session_state.time}", use_container_width=True)
 
@@ -178,7 +180,8 @@ def app():
         ph_global.altair_chart(alt.Chart(df_glob).mark_line().encode(x="T", y="value", color="variable"), use_container_width=True)
         
         colony_data = {"T": st.session_state.time_axis}
-        for sid in range(1, num_seeds+1): colony_data[f"L{sid}"] = st.session_state.colony_history[sid]
+        for sid in range(1, num_seeds+1): 
+            colony_data[f"L{sid}"] = st.session_state.colony_history[sid]
         df_loc = pd.DataFrame(colony_data).melt("T")
         ph_local.altair_chart(alt.Chart(df_loc).mark_line().encode(x="T", y="value", color="variable"), use_container_width=True)
 
