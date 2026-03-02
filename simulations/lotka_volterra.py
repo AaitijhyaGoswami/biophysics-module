@@ -4,7 +4,8 @@ import pandas as pd
 import altair as alt
 
 def app():
-    st.title("Spatial Chemotaxis Predator–Prey")
+    st.set_page_config(page_title="Chemotaxis Predator-Prey", layout="wide")
+    st.title("🧫 Spatial Chemotaxis Predator–Prey")
     st.subheader("Reaction–Diffusion–Chemotaxis System in a Circular Domain")
 
     st.markdown("""
@@ -13,6 +14,26 @@ def app():
     Predators migrate up prey gradients, producing spiral hunting fronts
     and collapse zones.
     """)
+
+    # ---------------- APPLICATIONS ----------------
+    st.markdown("### 🔬 Research & Biological Applications")
+    col_app1, col_app2 = st.columns(2)
+    with col_app1:
+        st.markdown("""
+        **Microbial Ecology & Biofilms**
+        * **Protist-Bacteria Interaction:** Modeling how predatory ciliates or amoebae track and consume bacterial clusters.
+        * **Myxobacteria Swarming:** Studying "wolf-pack" hunting behaviors where bacteria aggregate to digest prey.
+        * **Bioremediation:** Predicting how predatory microbes move toward contaminant-degrading prey species.
+        """)
+    with col_app2:
+        st.markdown("""
+        **Mathematical Biology & Medicine**
+        * **Angiogenesis:** Simulating how endothelial cells migrate toward high concentrations of growth factors (VEGF) secreted by tumors.
+        * **Immunology:** Modeling leukocyte (white blood cell) chemotaxis toward pathogens or inflammatory signals.
+        * **Pattern Formation:** Analyzing the stability of Turing-like patterns in environments with active transport.
+        """)
+
+    
 
     # ---------------- THEORY ----------------
     st.markdown("### Governing Equations")
@@ -221,4 +242,3 @@ def app():
 
 if __name__ == "__main__":
     app()
-
