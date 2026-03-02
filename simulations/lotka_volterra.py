@@ -5,7 +5,7 @@ import altair as alt
 
 def app():
     st.set_page_config(page_title="Chemotaxis Predator-Prey", layout="wide")
-    st.title("🧫 Spatial Chemotaxis Predator–Prey")
+    st.title("Spatial Chemotaxis Predator–Prey")
     st.subheader("Reaction–Diffusion–Chemotaxis System in a Circular Domain")
 
     st.markdown("""
