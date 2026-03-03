@@ -114,6 +114,9 @@ def app():
     \end{aligned}
     """)
 
+    st.markdown("## Static Run Video")
+    st.video("C:\Users\AAITIZHYA GOSWAMI\OneDrive\Videos\MEGA_plate.mp4")
+
     # ---------------- Sidebar ----------------
     st.sidebar.subheader("Evolution Parameters")
     NU = st.sidebar.slider("Mutation Rate (ν)", 0.0, 0.1, 0.01)
