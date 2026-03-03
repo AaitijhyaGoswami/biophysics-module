@@ -58,6 +58,10 @@ def app():
     \end{aligned}
     """)
 
+    st.markdown("## Static Run Video")
+    st.video("https://youtu.be/-sIObCDLFYY")
+
+
     # ---------------- Sidebar ----------------
     st.sidebar.subheader("Diffusion")
     d_prey = st.sidebar.slider("Diff Prey", 0.0, 0.1, 0.02, format="%.3f")
