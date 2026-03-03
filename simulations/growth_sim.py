@@ -110,8 +110,8 @@ def app():
     grid              = 300
     num_seeds         = st.sidebar.slider("Number of Colonies",    1,   12,  12)
     seed_intensity    = 0.03
-    steps_per_frame   = st.sidebar.slider("Simulation Speed",      1,  100,  40)
-    target_fps        = st.sidebar.slider("Target FPS",            1,   30,  12)
+    steps_per_frame   = st.sidebar.slider("Simulation Speed",      1,  100,  15)
+    target_fps        = st.sidebar.slider("Target FPS",            1,   30,  20)
     surface_3d_every  = 10   # redraw 3D surface every 10 frames
     charts_every      = 25   # redraw Altair charts every 25 frames
 
