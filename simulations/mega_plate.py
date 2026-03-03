@@ -1,11 +1,9 @@
-import time
 import streamlit as st
 import numpy as np
 import pandas as pd
 import altair as alt
 
 alt.data_transformers.disable_max_rows()
-
 
 # ================= phase map helper =================
 def run_coarse(nu, p, steps=120, size=60):
@@ -64,11 +62,12 @@ def app():
 
     st.markdown("""
     This simulator models **stepwise antibiotic resistance evolution**
-    across spatial drug gradients using discrete stochastic dynamics. It is inspired by the Harvard
-    Medical School "MEGA-plate" (Microbial Evolution and Growth Arena), which demonstrates how
+    across spatial drug gradients using discrete stochastic dynamics. It is inspired by the Harvard 
+    Medical School "MEGA-plate" (Microbial Evolution and Growth Arena), which demonstrates how 
     bacteria migrate into increasing concentrations of antibiotics through successive mutations.
     """)
 
+    # ---------------- APPLICATIONS & RESEARCH ----------------
     with st.expander("Explore Applications & Scientific Relevance", expanded=True):
         col_info1, col_info2 = st.columns(2)
         with col_info1:
@@ -86,10 +85,14 @@ def app():
             * **Infection Control:** Modeling how spatial barriers in the body (like tissue density) affect bacterial spread.
             """)
 
+    
+
     # ---------------- Mathematical model ----------------
     st.markdown("## Mathematical Model")
+
     st.latex(r"B_i(x,y,t)\in\{0,1\},\quad i\in\{1,2,3\}")
     st.latex(r"A(x,y)\in\{0,1,2\}")
+
     st.latex(r"""
     B_i(x,y,t+1)=
     \begin{cases}
@@ -97,9 +100,11 @@ def app():
     B_i(x,y,t), & \text{otherwise}.
     \end{cases}
     """)
+
     st.latex(r"\Pr(B_i(x\to x',t+1)=1)=p")
     st.latex(r"\Pr(i\to i+1)=\nu")
     st.latex(r"i-1\ge A(x')")
+
     st.latex(r"""
     \begin{aligned}
     B_i &: \text{bacteria with resistance level } i\\
@@ -112,21 +117,20 @@ def app():
     # ---------------- Sidebar ----------------
     st.sidebar.subheader("Evolution Parameters")
     NU = st.sidebar.slider("Mutation Rate (ν)", 0.0, 0.1, 0.01)
-    P  = st.sidebar.slider("Growth Prob (p)",   0.0, 1.0, 0.2)
+    P = st.sidebar.slider("Growth Prob (p)", 0.0, 1.0, 0.2)
 
     st.sidebar.subheader("System Settings")
-    SIZE           = 100
-    CENTER         = SIZE // 2
-    RADIUS         = 45
-    MAX_RES_LEVEL  = 3
+    SIZE = 100
+    CENTER = SIZE // 2
+    RADIUS = 45
+    MAX_RES_LEVEL = 3
     STEPS_PER_FRAME = st.sidebar.slider("Speed", 1, 10, 2)
 
-    # throttle constants — same pattern as growth sim
-    CHARTS_EVERY  = 20   # redraw Altair charts every N frames
-    PHASE_EVERY   = 50   # redraw expensive phase map every N frames
+    # ---------------- Init ----------------
+    if "mp_grid" not in st.session_state:
+        st.session_state.mp_initialized = False
 
-    # ---------------- Init helpers ----------------
-    def build_ab_map():
+    def reset_simulation():
         ab_map = np.ones((SIZE, SIZE)) * 99
         for r in range(SIZE):
             for c in range(SIZE):
@@ -139,207 +143,144 @@ def app():
                     ab_map[r, c] = 1
                 else:
                     ab_map[r, c] = 2
-        return ab_map
 
-    def init_state():
-        ab_map   = build_ab_map()
         bac_grid = np.zeros((SIZE, SIZE), dtype=int)
         bac_grid[CENTER - 1:CENTER + 2, CENTER - 1:CENTER + 2] = 1
-        return ab_map, bac_grid
 
-    # ---------------- Session state ----------------
-    if "mp_initialized" not in st.session_state:
-        ab_map, bac_grid = init_state()
-        st.session_state.mp_ab_map        = ab_map
-        st.session_state.mp_grid          = bac_grid
-        st.session_state.mp_time          = 0.0
-        st.session_state.mp_frame         = 0
-        st.session_state.mp_hist_time     = []
-        st.session_state.mp_hist_total    = []
-        st.session_state.mp_hist_res      = []
-        st.session_state.mp_phase_cache   = None
-        st.session_state.mp_initialized   = True
+        st.session_state.mp_ab_map = ab_map
+        st.session_state.mp_grid = bac_grid
+        st.session_state.mp_time = 0.0
+        st.session_state.mp_hist_time = []
+        st.session_state.mp_hist_total = []
+        st.session_state.mp_hist_res = []
+        st.session_state.mp_initialized = True
+
+    if not st.session_state.mp_initialized:
+        reset_simulation()
 
     if st.sidebar.button("Reset Simulation"):
-        ab_map, bac_grid = init_state()
-        st.session_state.mp_ab_map        = ab_map
-        st.session_state.mp_grid          = bac_grid
-        st.session_state.mp_time          = 0.0
-        st.session_state.mp_frame         = 0
-        st.session_state.mp_hist_time     = []
-        st.session_state.mp_hist_total    = []
-        st.session_state.mp_hist_res      = []
-        st.session_state.mp_phase_cache   = None
+        reset_simulation()
+        st.rerun()
 
     # ---------------- Layout ----------------
     col_vis, col_stats = st.columns([1, 1])
 
     with col_vis:
         st.markdown("### Figure 1 — Spatial Evolution")
-        ph_plate = st.empty()
+        plate_placeholder = st.empty()
 
     with col_stats:
-        st.markdown("### Figure 2 — Population Size")
-        ph_total = st.empty()
-        st.markdown("### Figure 3 — Genotype Frequencies")
-        ph_freq  = st.empty()
-        st.markdown("### Figure 4 — Phase Map (ν vs p)")
-        ph_phase = st.empty()
+        st.markdown("### Figure 2 — Evolutionary Dynamics")
 
-    run = st.toggle("Run Simulation", value=False)
-    st.markdown("**Species Legend:** 🔴 Superbug (R3) | 🟢 Mutant (R2) | 🔵 Wildtype (R1)")
+        fig2_row1 = st.container()
+        fig2_row2 = st.container()
+        fig2_row3 = st.container()
 
-    # ---------------- Render function ----------------
-    def render(bac_grid, ab_map, t, frame):
-        # Figure 1: spatial plate (every frame)
-        img = np.zeros((SIZE, SIZE, 3))
-        img[ab_map == 0] = [0.18, 0.18, 0.18]
-        img[ab_map == 1] = [0.38, 0.38, 0.38]
-        img[ab_map == 2] = [0.58, 0.58, 0.58]
-        img[bac_grid == 1] = [0.0, 0.7, 1.0]   # blue  – wildtype
-        img[bac_grid == 2] = [0.2, 1.0, 0.2]   # green – mutant
-        img[bac_grid == 3] = [1.0, 0.2, 0.2]   # red   – superbug
-        ph_plate.image(img, caption=f"Time: {t:.1f} h", use_column_width=True)
+        g1 = fig2_row1.empty()
+        g2 = fig2_row2.empty()
+        g3 = fig2_row3.empty()
 
-        # Figures 2, 3, 4: charts (throttled)
-        if frame % CHARTS_EVERY == 0 and st.session_state.mp_hist_time:
-            df_total = pd.DataFrame({
-                "Time":       st.session_state.mp_hist_time,
-                "Population": st.session_state.mp_hist_total,
-            })
-            ph_total.altair_chart(
-                alt.Chart(df_total).mark_line(color="#4fc3f7")
-                .encode(x="Time:Q", y="Population:Q",
-                        tooltip=["Time", "Population"])
-                .interactive(),
-                use_container_width=True,
-            )
+    run_sim = st.toggle("Run Simulation", value=False)
 
-            hist = np.array(st.session_state.mp_hist_res)
-            df_frac = pd.DataFrame({
-                "Time":     st.session_state.mp_hist_time,
-                "Wildtype": hist[:, 0],
-                "Mutant":   hist[:, 1],
-                "Superbug": hist[:, 2],
-            }).melt("Time", var_name="Genotype", value_name="Frequency")
-            ph_freq.altair_chart(
-                alt.Chart(df_frac).mark_line()
-                .encode(x="Time:Q", y="Frequency:Q",
-                        color=alt.Color("Genotype:N",
-                                        scale=alt.Scale(
-                                            domain=["Wildtype", "Mutant", "Superbug"],
-                                            range=["#4fc3f7", "#69f0ae", "#ef5350"])),
-                        tooltip=["Time", "Genotype", "Frequency"])
-                .interactive(),
-                use_container_width=True,
-            )
+    st.markdown("**Species Legend:** 🔴 Superbug | 🟢 Mutated | 🔵 Wildtype")
 
-        # Phase map (expensive — throttled more aggressively)
-        if frame % PHASE_EVERY == 0:
-            if st.session_state.mp_phase_cache is None or frame % PHASE_EVERY == 0:
-                nus   = np.linspace(0, 0.1, 10)
-                ps    = np.linspace(0, 1.0, 10)
-                phase = [[nu, p, run_coarse(nu, p)] for nu in nus for p in ps]
-                st.session_state.mp_phase_cache = phase
-            df_phase = pd.DataFrame(
-                st.session_state.mp_phase_cache, columns=["nu", "p", "state"]
-            )
-            ph_phase.altair_chart(
-                alt.Chart(df_phase).mark_rect().encode(
-                    x=alt.X("nu:Q", bin=alt.Bin(maxbins=10), title="Mutation rate (ν)"),
-                    y=alt.Y("p:Q",  bin=alt.Bin(maxbins=10), title="Growth probability (p)"),
-                    color=alt.Color("state:N",
-                                    scale=alt.Scale(domain=[0, 1, 2],
-                                                    range=["black", "orange", "red"]),
-                                    legend=None),
-                ).properties(height=220),
-                use_container_width=True,
-            )
-
-    # ---------------- Static render when paused ----------------
-    render(
-        st.session_state.mp_grid,
-        st.session_state.mp_ab_map,
-        st.session_state.mp_time,
-        frame=0,   # force all panels to draw on load
-    )
-
-    # ---------------- Live simulation loop ----------------
-    if run:
-        bacteria_grid  = st.session_state.mp_grid.copy()
+    # ---------------- Simulation ----------------
+    if run_sim:
+        bacteria_grid = st.session_state.mp_grid
         antibiotic_map = st.session_state.mp_ab_map
-        t              = st.session_state.mp_time
-        frame          = st.session_state.mp_frame
-        hist_time      = list(st.session_state.mp_hist_time)
-        hist_total     = list(st.session_state.mp_hist_total)
-        hist_res       = list(st.session_state.mp_hist_res)
 
-        while True:
-            t0 = time.perf_counter()
+        for _ in range(STEPS_PER_FRAME):
+            new_grid = bacteria_grid.copy()
+            rows, cols = np.where(bacteria_grid > 0)
+            for r, c in zip(rows, cols):
+                res = bacteria_grid[r, c]
+                if (res - 1) < antibiotic_map[r, c]:
+                    new_grid[r, c] = 0
+                    continue
+                for nr, nc in [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]:
+                    if 0 <= nr < SIZE and 0 <= nc < SIZE:
+                        if bacteria_grid[nr, nc] == 0 and antibiotic_map[nr, nc] != 99:
+                            if np.random.rand() < P:
+                                child = res
+                                if np.random.rand() < NU:
+                                    child = min(MAX_RES_LEVEL, child + 1)
+                                if (child - 1) >= antibiotic_map[nr, nc]:
+                                    new_grid[nr, nc] = child
 
-            # --- physics (vectorised inner loop) ---
-            for _ in range(STEPS_PER_FRAME):
-                new_grid = bacteria_grid.copy()
-                rows, cols = np.where(bacteria_grid > 0)
+            bacteria_grid[:] = new_grid
+            st.session_state.mp_time += 0.1
 
-                for r, c in zip(rows, cols):
-                    res = bacteria_grid[r, c]
-                    if (res - 1) < antibiotic_map[r, c]:
-                        new_grid[r, c] = 0
-                        continue
-                    for nr, nc in [(r - 1, c), (r + 1, c), (r, c - 1), (r, c + 1)]:
-                        if 0 <= nr < SIZE and 0 <= nc < SIZE:
-                            if bacteria_grid[nr, nc] == 0 and antibiotic_map[nr, nc] != 99:
-                                if np.random.rand() < P:
-                                    child = res
-                                    if np.random.rand() < NU:
-                                        child = min(MAX_RES_LEVEL, child + 1)
-                                    if (child - 1) >= antibiotic_map[nr, nc]:
-                                        new_grid[nr, nc] = child
+            total = np.sum(bacteria_grid > 0)
+            c1 = np.sum(bacteria_grid == 1)
+            c2 = np.sum(bacteria_grid == 2)
+            c3 = np.sum(bacteria_grid == 3)
 
-                bacteria_grid[:] = new_grid
-                t += 0.1
+            st.session_state.mp_hist_time.append(st.session_state.mp_time)
+            st.session_state.mp_hist_total.append(total)
 
-            # --- record ---
-            frame += 1
-            total = int(np.sum(bacteria_grid > 0))
-            c1    = int(np.sum(bacteria_grid == 1))
-            c2    = int(np.sum(bacteria_grid == 2))
-            c3    = int(np.sum(bacteria_grid == 3))
-            hist_time.append(t)
-            hist_total.append(total)
-            hist_res.append([
-                c1 / total if total else 0,
-                c2 / total if total else 0,
-                c3 / total if total else 0,
-            ])
+            if total > 0:
+                st.session_state.mp_hist_res.append([c1 / total, c2 / total, c3 / total])
+            else:
+                st.session_state.mp_hist_res.append([0, 0, 0])
 
-            # write history to session state so render() can read it
-            st.session_state.mp_hist_time  = hist_time
-            st.session_state.mp_hist_total = hist_total
-            st.session_state.mp_hist_res   = hist_res
+        st.session_state.mp_grid = bacteria_grid
+        st.rerun()
 
-            # --- render ---
-            render(bacteria_grid, antibiotic_map, t, frame)
+    # ---------------- Visual ----------------
+    bac_grid = st.session_state.mp_grid
+    ab_map = st.session_state.mp_ab_map
 
-            # --- persist ---
-            st.session_state.mp_grid  = bacteria_grid.copy()
-            st.session_state.mp_time  = t
-            st.session_state.mp_frame = frame
+    img = np.zeros((SIZE, SIZE, 3))
+    img[ab_map == 0] = [0.2, 0.2, 0.2]
+    img[ab_map == 1] = [0.4, 0.4, 0.4]
+    img[ab_map == 2] = [0.6, 0.6, 0.6]
 
-            # --- pace to ~20 fps ---
-            elapsed = time.perf_counter() - t0
-            wait    = (1 / 20) - elapsed
-            if wait > 0:
-                time.sleep(wait)
+    img[bac_grid == 1] = [0, 1, 1]
+    img[bac_grid == 2] = [0, 1, 0]
+    img[bac_grid == 3] = [1, 0, 0]
+
+    plate_placeholder.image(img, caption=f"Time: {st.session_state.mp_time:.1f} h", use_column_width=True)
+
+    # ---------------- Graphs ----------------
+    if st.session_state.mp_hist_time:
+        df_total = pd.DataFrame({"Time": st.session_state.mp_hist_time,
+                                 "Population": st.session_state.mp_hist_total})
+        g1.altair_chart(
+            alt.Chart(df_total).mark_line().encode(x="Time", y="Population"),
+            use_container_width=True
+        )
+
+        hist = np.array(st.session_state.mp_hist_res)
+        df_frac = pd.DataFrame({
+            "Time": st.session_state.mp_hist_time,
+            "Wildtype": hist[:, 0],
+            "Mutant": hist[:, 1],
+            "Superbug": hist[:, 2]
+        }).melt("Time", var_name="Genotype", value_name="Frequency")
+
+        g2.altair_chart(
+            alt.Chart(df_frac).mark_line().encode(x="Time", y="Frequency", color="Genotype"),
+            use_container_width=True
+        )
+
+        nus = np.linspace(0, 0.1, 10)
+        ps = np.linspace(0, 1, 10)
+        phase = [[nu, p, run_coarse(nu, p)] for nu in nus for p in ps]
+        df_phase = pd.DataFrame(phase, columns=["nu", "p", "state"])
+
+        phase_chart = alt.Chart(df_phase).mark_rect().encode(
+            x=alt.X("nu:Q", bin=alt.Bin(maxbins=10), title="Mutation rate (ν)"),
+            y=alt.Y("p:Q", bin=alt.Bin(maxbins=10), title="Growth probability (p)"),
+            color=alt.Color("state:N",
+                            scale=alt.Scale(domain=[0, 1, 2],
+                                            range=["black", "orange", "red"]),
+                            legend=None)
+        ).properties(height=250)
+
+        g3.altair_chart(phase_chart, use_container_width=True)
 
     st.markdown("---")
-    st.markdown(
-        "**Numerics:** Discrete-time stochastic cellular automata. "
-        "Antibiotic zones defined by radial thresholding. "
-        "Forward frame loop with throttled chart redraws."
-    )
-
+    st.markdown("**Numerics:** Discrete time stochastic cellular automata. Antibiotic boundaries defined by radial thresholding.")
 
 if __name__ == "__main__":
     app()
