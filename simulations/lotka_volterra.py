@@ -15,6 +15,7 @@ def app():
     Predators migrate up prey gradients, producing spiral hunting fronts and collapse zones.
     """)
 
+    # ---------------- APPLICATIONS ----------------
     with st.expander("Explore Applications & Scientific Relevance", expanded=True):
         col_info1, col_info2 = st.columns(2)
         with col_info1:
@@ -32,35 +33,62 @@ def app():
             * **Pattern Formation:** Analyzing the stability of Turing-like patterns in environments with active transport.
             """)
 
+    # ---------------- REFERENCES ----------------
     with st.expander("📚 Key Reference Papers & Further Reading", expanded=False):
         col_ref1, col_ref2 = st.columns(2)
         with col_ref1:
             st.markdown("""
             **Chemotaxis & Keller–Segel Models**
-            * Keller, E. F. & Segel, L. A. (1971). [Model for Chemotaxis.](https://doi.org/10.1016/0022-5193(71)90050-6) *Journal of Theoretical Biology, 30(2).*
-            * Horstmann, D. (2003). [From 1970 Until Present: The Keller–Segel Model in Chemotaxis and Its Consequences.](https://doi.org/10.18452/7929) *Jahresbericht der DMV, 105.*
-            * Painter, K. J. & Hillen, T. (2002). [Volume-Filling and Quorum-Sensing in Models for Chemosensitive Movement.](https://doi.org/10.1139/o02-027) *Canadian Applied Mathematics Quarterly, 10(4).*
+            * Keller, E. F. & Segel, L. A. (1971). [Model for Chemotaxis.](https://doi.org/10.1016/0022-5193(71)90050-6)
+              *Journal of Theoretical Biology, 30(2).* — The original PDE framework for directed cell migration along chemical gradients.
+            * Horstmann, D. (2003). [From 1970 Until Present: The Keller–Segel Model in Chemotaxis and Its Consequences.](https://doi.org/10.18452/7929)
+              *Jahresbericht der DMV, 105.* — Comprehensive review of mathematical analysis and blow-up behaviour.
+            * Painter, K. J. & Hillen, T. (2002). [Volume-Filling and Quorum-Sensing in Models for Chemosensitive Movement.](https://doi.org/10.1139/o02-027)
+              *Canadian Applied Mathematics Quarterly, 10(4).* — Extensions preventing density blow-up via volume exclusion.
 
             **Lotka–Volterra Spatial Dynamics**
-            * Turing, A. M. (1952). [The Chemical Basis of Morphogenesis.](https://doi.org/10.1098/rstb.1952.0012) *Phil. Trans. R. Soc. B.*
-            * Mimura, M. & Murray, J. D. (1978). [On a Diffusive Prey–Predator Model Which Exhibits Patchiness.](https://doi.org/10.1007/BF00276918) *Journal of Theoretical Biology, 75(3).*
+            * Turing, A. M. (1952). [The Chemical Basis of Morphogenesis.](https://doi.org/10.1098/rstb.1952.0012)
+              *Phil. Trans. R. Soc. B.* — Foundational diffusion-driven instability theory underpinning spatial pattern formation.
+            * Mimura, M. & Murray, J. D. (1978). [On a Diffusive Prey–Predator Model Which Exhibits Patchiness.](https://doi.org/10.1007/BF00276918)
+              *Journal of Theoretical Biology, 75(3).* — Early demonstration of spatial heterogeneity from predator-prey diffusion.
             """)
         with col_ref2:
             st.markdown("""
             **Predator–Prey Pattern Formation**
-            * Murray, J. D. (2003). [Mathematical Biology II: Spatial Models and Biomedical Applications.](https://doi.org/10.1007/b98869) *Springer.*
-            * Tyson, R. et al. (1999). [Models and Analysis of Chemotactic Bacterial Patterns in a Liquid Medium.](https://doi.org/10.1098/rspb.1999.0742) *Proc. Royal Society B, 266.*
+            * Murray, J. D. (2003). [Mathematical Biology II: Spatial Models and Biomedical Applications.](https://doi.org/10.1007/b98869)
+              *Springer.* — Definitive textbook treatment of reaction-diffusion systems and spatial ecological models.
+            * Tyson, R. et al. (1999). [Models and Analysis of Chemotactic Bacterial Patterns in a Liquid Medium.](https://doi.org/10.1098/rspb.1999.0742)
+              *Proc. Royal Society B, 266.* — Numerical study of chemotaxis-driven aggregation in bacterial systems.
 
             **Microbial Predation & Immunology**
-            * Velicer, G. J. & Vos, M. (2009). [Sociobiology of the Myxobacteria.](https://doi.org/10.1146/annurev.micro.091208.073326) *Annual Review of Microbiology, 63.*
-            * Lauffenburger, D. A. & Horwitz, A. F. (1996). [Cell Migration: A Physically Integrated Molecular Process.](https://doi.org/10.1016/S0092-8674(00)81179-X) *Cell, 84(3).*
-            * Tranquillo, R. T. & Lauffenburger, D. A. (1987). [Stochastic Model of Leukocyte Chemosensory Movement.](https://doi.org/10.1007/BF02460024) *Journal of Mathematical Biology, 25.*
+            * Velicer, G. J. & Vos, M. (2009). [Sociobiology of the Myxobacteria.](https://doi.org/10.1146/annurev.micro.091208.073326)
+              *Annual Review of Microbiology, 63.* — Review of cooperative predation strategies including coordinated swarming.
+            * Lauffenburger, D. A. & Horwitz, A. F. (1996). [Cell Migration: A Physically Integrated Molecular Process.](https://doi.org/10.1016/S0092-8674(00)81179-X)
+              *Cell, 84(3).* — Mechanistic framework connecting receptor-level chemosensing to directed cell movement.
+            * Tranquillo, R. T. & Lauffenburger, D. A. (1987). [Stochastic Model of Leukocyte Chemosensory Movement.](https://doi.org/10.1007/BF02460024)
+              *Journal of Mathematical Biology, 25.* — Stochastic derivation of macroscopic chemotaxis equations from receptor dynamics.
             """)
 
+    # ---------------- THEORY ----------------
     st.markdown("### Governing Equations")
     st.latex(r"\frac{\partial P}{\partial t}=D_P\nabla^2P+\mu PN-\beta PQ")
     st.latex(r"\frac{\partial Q}{\partial t}=D_Q\nabla^2Q-\chi\nabla\cdot(Q\nabla P)+\gamma\beta PQ-\delta Q")
     st.latex(r"\frac{\partial N}{\partial t}=-\alpha PN")
+    st.latex(r"""
+    \begin{aligned}
+    P(x,y,t) &:\ \text{Prey density} \\
+    Q(x,y,t) &:\ \text{Predator density} \\
+    N(x,y,t) &:\ \text{Nutrient concentration} \\
+    \\
+    D_P,\, D_Q &:\ \text{Diffusion coefficients} \\
+    \chi &:\ \text{Chemotactic sensitivity} \\
+    \mu &:\ \text{Prey growth rate} \\
+    \alpha &:\ \text{Nutrient consumption rate} \\
+    \beta &:\ \text{Predation rate} \\
+    \gamma &:\ \text{Predator conversion efficiency} \\
+    \delta &:\ \text{Predator death rate}
+    \end{aligned}
+    """)
 
     # ---------------- SIDEBAR ----------------
     st.sidebar.subheader("Diffusion")
@@ -81,7 +109,7 @@ def app():
     grid            = 200
     steps_per_frame = st.sidebar.slider("Simulation Speed", 1, 50, 5)
     dt              = 0.1
-    CHARTS_EVERY    = 20
+    CHARTS_EVERY    = 20  # redraw charts every N frames
 
     # ---------------- OPERATORS ----------------
     def laplacian(arr):
@@ -145,13 +173,15 @@ def app():
 
     if st.sidebar.button("Reset Simulation"):
         reset()
-        st.rerun()
 
     # ---------------- LAYOUT ----------------
+    # Static headers in columns for visual layout
     hdr_l, hdr_r = st.columns(2)
     hdr_l.markdown("### Figure 1 — Spatial Density Fields")
     hdr_r.markdown("### Figure 2 — Global Population Dynamics")
 
+    # Placeholders defined at TOP LEVEL (not inside `with col:`) so the
+    # while-loop websocket flush works correctly on every frame
     img_col, pop_col = st.columns(2)
     petri_view = img_col.empty()
     chart_pop  = pop_col.empty()
@@ -174,6 +204,7 @@ def app():
 
     # ---------------- RENDER ----------------
     def render(P, Q, N, mask, t, frame):
+        # Figure 1 — every frame
         img = np.zeros((grid, grid, 3))
         img[..., 0] = np.clip(Q * 4, 0, 1)
         img[..., 1] = np.clip(N * 4, 0, 1)
@@ -181,6 +212,7 @@ def app():
         img[~mask]  = 0
         petri_view.image(img, caption=f"Time: {t}", use_column_width=True, clamp=True)
 
+        # Figures 2–4 — throttled
         if frame % CHARTS_EVERY == 0 and len(st.session_state.hist_t) > 0:
             df_pop = pd.DataFrame({
                 "Time":     st.session_state.hist_t,
@@ -208,7 +240,7 @@ def app():
                 use_container_width=True
             )
 
-    # ---------------- SIMULATION: one frame per rerun ----------------
+    # ---------------- SIMULATION LOOP ----------------
     if running:
         P     = st.session_state.p.copy()
         Q     = st.session_state.q.copy()
@@ -223,50 +255,59 @@ def app():
         hist_n = list(st.session_state.hist_n)
         hist_r = list(st.session_state.hist_r)
 
-        for _ in range(steps_per_frame):
-            gx, gy = gradient(P)
-            chemo  = divergence(Q * gx, Q * gy)
+        while True:
+            t0 = time.perf_counter()
 
-            dP = mu * P * N - beta * P * Q
-            dQ = gamma * beta * P * Q - delta * Q
-            dN = -alpha * P * N
+            # --- physics ---
+            for _ in range(steps_per_frame):
+                gx, gy = gradient(P)
+                chemo  = divergence(Q * gx, Q * gy)
 
-            P += dt * (dP + d_prey * laplacian(P))
-            Q += dt * (dQ + d_pred * laplacian(Q) - chi * chemo)
-            N += dt * dN
+                dP = mu * P * N - beta * P * Q
+                dQ = gamma * beta * P * Q - delta * Q
+                dN = -alpha * P * N
 
-            P = np.clip(P, 0, 1)
-            Q = np.clip(Q, 0, 1)
-            N = np.clip(N, 0, 1)
-            P[~mask] = Q[~mask] = N[~mask] = 0
+                P += dt * (dP + d_prey * laplacian(P))
+                Q += dt * (dQ + d_pred * laplacian(Q) - chi * chemo)
+                N += dt * dN
 
-            t += 1
-            if t % 5 == 0:
-                hist_t.append(t)
-                hist_p.append(float(P.sum()))
-                hist_q.append(float(Q.sum()))
-                hist_n.append(float(N.sum()))
-                hist_r.append(float(Q.sum() / P.sum()) if P.sum() > 0 else 0.0)
+                P = np.clip(P, 0, 1)
+                Q = np.clip(Q, 0, 1)
+                N = np.clip(N, 0, 1)
+                P[~mask] = Q[~mask] = N[~mask] = 0
 
-        frame += 1
+                t += 1
+                if t % 5 == 0:
+                    hist_t.append(t)
+                    hist_p.append(float(P.sum()))
+                    hist_q.append(float(Q.sum()))
+                    hist_n.append(float(N.sum()))
+                    hist_r.append(float(Q.sum() / P.sum()) if P.sum() > 0 else 0.0)
 
-        # Persist
-        st.session_state.p       = P
-        st.session_state.q       = Q
-        st.session_state.n       = N
-        st.session_state.t       = t
-        st.session_state.frame   = frame
-        st.session_state.hist_t  = hist_t
-        st.session_state.hist_p  = hist_p
-        st.session_state.hist_q  = hist_q
-        st.session_state.hist_n  = hist_n
-        st.session_state.hist_r  = hist_r
+            frame += 1
 
-        render(P, Q, N, mask, t, frame)
+            # write history so render() can read it
+            st.session_state.hist_t = hist_t
+            st.session_state.hist_p = hist_p
+            st.session_state.hist_q = hist_q
+            st.session_state.hist_n = hist_n
+            st.session_state.hist_r = hist_r
 
-        # Schedule next frame via rerun — this is the key fix
-        time.sleep(0.05)
-        st.rerun()
+            # --- render ---
+            render(P, Q, N, mask, t, frame)
+
+            # --- persist ---
+            st.session_state.p     = P.copy()
+            st.session_state.q     = Q.copy()
+            st.session_state.n     = N.copy()
+            st.session_state.t     = t
+            st.session_state.frame = frame
+
+            # --- pace to ~20 fps ---
+            elapsed = time.perf_counter() - t0
+            wait    = (1 / 20) - elapsed
+            if wait > 0:
+                time.sleep(wait)
 
     else:
         render(
@@ -275,9 +316,8 @@ def app():
             st.session_state.n,
             st.session_state.mask,
             st.session_state.t,
-            frame=st.session_state.frame,
+            frame=0,
         )
-
 
 if __name__ == "__main__":
     app()
