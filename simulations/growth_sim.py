@@ -39,40 +39,7 @@ def app():
             * **Mathematical Ecology:** Applying Reaction-Diffusion equations to understand invasive species spread in heterogeneous landscapes.
             """)
 
-    with st.expander("📚 Key Reference Papers & Further Reading", expanded=False):
-        col_ref1, col_ref2 = st.columns(2)
-        with col_ref1:
-            st.markdown("""
-            **Reaction–Diffusion & Pattern Formation**
-            * Turing, A. M. (1952). [The Chemical Basis of Morphogenesis.](https://doi.org/10.1098/rstb.1952.0012)
-              *Philosophical Transactions of the Royal Society B.*
-            * Kondo, S. & Miura, T. (2010). [Reaction-Diffusion Model as a Framework for Understanding Biological Pattern Formation.](https://doi.org/10.1126/science.1179047)
-              *Science, 329(5999).*
-            * Cross, M. C. & Hohenberg, P. C. (1993). [Pattern Formation Outside of Equilibrium.](https://doi.org/10.1103/RevModPhys.65.851)
-              *Reviews of Modern Physics, 65(3).*
-
-            **Bacterial Colony Morphogenesis**
-            * Ben-Jacob, E. et al. (1994). [Generic Modelling of Cooperative Growth Patterns in Bacterial Colonies.](https://doi.org/10.1038/368046a0)
-              *Nature, 368.*
-            * Matsushita, M. & Fujikawa, H. (1990). [Diffusion-Limited Growth in Bacterial Colony Formation.](https://doi.org/10.1016/0378-4371(90)90081-A)
-              *Physica A, 168(1).*
-            """)
-        with col_ref2:
-            st.markdown("""
-            **Stochastic Modeling & Branching**
-            * Goldenfeld, N. & Kadanoff, L. P. (1999). [Simple Lessons from Complexity.](https://doi.org/10.1126/science.284.5411.87)
-              *Science, 284(5411).*
-            * Mimura, M. et al. (2000). [Reaction–Diffusion Modelling of Bacterial Colony Patterns.](https://doi.org/10.1016/S0378-4371(99)00549-5)
-              *Physica A, 282(1–2).*
-            * Wakita, J. et al. (1994). [Experimental Investigation on the Validity of Population Dynamics Approach to Bacterial Colony Formation.](https://doi.org/10.1143/JPSJ.63.1205)
-              *Journal of the Physical Society of Japan, 63(3).*
-
-            **Biofilms & Clinical Relevance**
-            * Costerton, J. W. et al. (1999). [Bacterial Biofilms: A Common Cause of Persistent Infections.](https://doi.org/10.1126/science.284.5418.1318)
-              *Science, 284(5418).*
-            * Stewart, P. S. & Costerton, J. W. (2001). [Antibiotic Resistance of Bacteria in Biofilms.](https://doi.org/10.1016/S0140-6736(01)05321-1)
-              *The Lancet, 358(9276).*
-            """)
+   
 
     # ---------------- THEORY ----------------
     st.markdown("### Governing Equations")
