@@ -39,10 +39,44 @@ def app():
             * **Mathematical Ecology:** Applying Reaction-Diffusion equations to understand invasive species spread in heterogeneous landscapes.
             """)
 
+    ### Reference Papers
+    with st.expander("📚 Key Reference Papers & Further Reading", expanded=False):
+        col_ref1, col_ref2 = st.columns(2)
+        with col_ref1:
+            st.markdown("""
+            **Reaction–Diffusion & Pattern Formation**
+            * Turing, A. M. (1952). [The Chemical Basis of Morphogenesis.](https://doi.org/10.1098/rstb.1952.0012)
+              *Philosophical Transactions of the Royal Society B.* — The foundational paper establishing how diffusion-driven instability generates spatial patterns.
+            * Kondo, S. & Miura, T. (2010). [Reaction-Diffusion Model as a Framework for Understanding Biological Pattern Formation.](https://doi.org/10.1126/science.1179047)
+              *Science, 329(5999).* — A modern review connecting Turing's theory to real biological systems.
+            * Cross, M. C. & Hohenberg, P. C. (1993). [Pattern Formation Outside of Equilibrium.](https://doi.org/10.1103/RevModPhys.65.851)
+              *Reviews of Modern Physics, 65(3).* — Comprehensive treatment of spatiotemporal pattern formation in non-equilibrium systems.
+
+            **Bacterial Colony Morphogenesis**
+            * Ben-Jacob, E. et al. (1994). [Generic Modelling of Cooperative Growth Patterns in Bacterial Colonies.](https://doi.org/10.1038/368046a0)
+              *Nature, 368.* — Pioneering work showing how cooperative strategies produce complex branching colony shapes.
+            * Matsushita, M. & Fujikawa, H. (1990). [Diffusion-Limited Growth in Bacterial Colony Formation.](https://doi.org/10.1016/0378-4371(90)90081-A)
+              *Physica A, 168(1).* — Describes DLA-like fractal growth in *Bacillus subtilis* colonies on nutrient agar.
+            """)
+        with col_ref2:
+            st.markdown("""
+            **Stochastic Modeling & Branching**
+            * Goldenfeld, N. & Kadanoff, L. P. (1999). [Simple Lessons from Complexity.](https://doi.org/10.1126/science.284.5411.87)
+              *Science, 284(5411).* — Explores how stochastic fluctuations at small scales give rise to large-scale emergent structure.
+            * Mimura, M. et al. (2000). [Reaction–Diffusion Modelling of Bacterial Colony Patterns.](https://doi.org/10.1016/S0378-4371(99)00549-5)
+              *Physica A, 282(1–2).* — Mathematical framework for tip-driven branching and nutrient-limited colony expansion.
+            * Wakita, J. et al. (1994). [Experimental Investigation on the Validity of Population Dynamics Approach to Bacterial Colony Formation.](https://doi.org/10.1143/JPSJ.63.1205)
+              *Journal of the Physical Society of Japan, 63(3).* — Experimental validation of continuum PDE models against real colony growth data.
+
+            **Biofilms & Clinical Relevance**
+            * Costerton, J. W. et al. (1999). [Bacterial Biofilms: A Common Cause of Persistent Infections.](https://doi.org/10.1126/science.284.5418.1318)
+              *Science, 284(5418).* — Seminal paper on the role of biofilm structure in chronic infection and antibiotic resistance.
+            * Stewart, P. S. & Costerton, J. W. (2001). [Antibiotic Resistance of Bacteria in Biofilms.](https://doi.org/10.1016/S0140-6736(01)05321-1)
+              *The Lancet, 358(9276).* — Explains how diffusion barriers within dense colonies limit antimicrobial penetration.
+            """)
+
     # ---------------- THEORY ----------------
     st.markdown("### Governing Equations")
-    
-    
 
     st.latex(r"\frac{\partial B}{\partial t}=D_B\nabla^2B + r B(1-B)F \,\Phi(x,y,t)")
     st.latex(r"\frac{\partial F}{\partial t}=D_F\nabla^2F - \lambda B F")
