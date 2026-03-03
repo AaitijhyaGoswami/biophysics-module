@@ -61,6 +61,9 @@ def app():
     \end{aligned}
     """)
 
+    st.markdown("## Static Run Video")
+    st.video("https://youtu.be/f6vUCx-SFOI")
+
     # ---------------- SIDEBAR ----------------
     st.sidebar.subheader("Physics Parameters")
     food_diff        = st.sidebar.slider("Food Diffusion",        0.0, 0.02, 0.008, format="%.4f")
