@@ -33,41 +33,7 @@ def app():
             * **Pattern Formation:** Analyzing the stability of Turing-like patterns in environments with active transport.
             """)
 
-    # ---------------- REFERENCES ----------------
-    with st.expander("📚 Key Reference Papers & Further Reading", expanded=False):
-        col_ref1, col_ref2 = st.columns(2)
-        with col_ref1:
-            st.markdown("""
-            **Chemotaxis & Keller–Segel Models**
-            * Keller, E. F. & Segel, L. A. (1971). [Model for Chemotaxis.](https://doi.org/10.1016/0022-5193(71)90050-6)
-              *Journal of Theoretical Biology, 30(2).* — The original PDE framework for directed cell migration along chemical gradients.
-            * Horstmann, D. (2003). [From 1970 Until Present: The Keller–Segel Model in Chemotaxis and Its Consequences.](https://doi.org/10.18452/7929)
-              *Jahresbericht der DMV, 105.* — Comprehensive review of mathematical analysis and blow-up behaviour.
-            * Painter, K. J. & Hillen, T. (2002). [Volume-Filling and Quorum-Sensing in Models for Chemosensitive Movement.](https://doi.org/10.1139/o02-027)
-              *Canadian Applied Mathematics Quarterly, 10(4).* — Extensions preventing density blow-up via volume exclusion.
 
-            **Lotka–Volterra Spatial Dynamics**
-            * Turing, A. M. (1952). [The Chemical Basis of Morphogenesis.](https://doi.org/10.1098/rstb.1952.0012)
-              *Phil. Trans. R. Soc. B.* — Foundational diffusion-driven instability theory underpinning spatial pattern formation.
-            * Mimura, M. & Murray, J. D. (1978). [On a Diffusive Prey–Predator Model Which Exhibits Patchiness.](https://doi.org/10.1007/BF00276918)
-              *Journal of Theoretical Biology, 75(3).* — Early demonstration of spatial heterogeneity from predator-prey diffusion.
-            """)
-        with col_ref2:
-            st.markdown("""
-            **Predator–Prey Pattern Formation**
-            * Murray, J. D. (2003). [Mathematical Biology II: Spatial Models and Biomedical Applications.](https://doi.org/10.1007/b98869)
-              *Springer.* — Definitive textbook treatment of reaction-diffusion systems and spatial ecological models.
-            * Tyson, R. et al. (1999). [Models and Analysis of Chemotactic Bacterial Patterns in a Liquid Medium.](https://doi.org/10.1098/rspb.1999.0742)
-              *Proc. Royal Society B, 266.* — Numerical study of chemotaxis-driven aggregation in bacterial systems.
-
-            **Microbial Predation & Immunology**
-            * Velicer, G. J. & Vos, M. (2009). [Sociobiology of the Myxobacteria.](https://doi.org/10.1146/annurev.micro.091208.073326)
-              *Annual Review of Microbiology, 63.* — Review of cooperative predation strategies including coordinated swarming.
-            * Lauffenburger, D. A. & Horwitz, A. F. (1996). [Cell Migration: A Physically Integrated Molecular Process.](https://doi.org/10.1016/S0092-8674(00)81179-X)
-              *Cell, 84(3).* — Mechanistic framework connecting receptor-level chemosensing to directed cell movement.
-            * Tranquillo, R. T. & Lauffenburger, D. A. (1987). [Stochastic Model of Leukocyte Chemosensory Movement.](https://doi.org/10.1007/BF02460024)
-              *Journal of Mathematical Biology, 25.* — Stochastic derivation of macroscopic chemotaxis equations from receptor dynamics.
-            """)
 
     # ---------------- THEORY ----------------
     st.markdown("### Governing Equations")
