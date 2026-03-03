@@ -40,7 +40,7 @@ def app():
             """)
 
     ### Reference Papers
-    with st.expander("📚 Key Reference Papers & Further Reading", expanded=False):
+    with st.expander("Key Reference Papers", expanded=False):
         col_ref1, col_ref2 = st.columns(2)
         with col_ref1:
             st.markdown("""
