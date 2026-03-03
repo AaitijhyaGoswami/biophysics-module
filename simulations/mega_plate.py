@@ -115,7 +115,7 @@ def app():
     """)
 
     st.markdown("## Static Run Video")
-    st.video("https://youtu.be/Jr2Bz2sDH4Y")
+    st.video("https://youtu.be/-jjPcGoqk-8")
 
     # ---------------- Sidebar ----------------
     st.sidebar.subheader("Evolution Parameters")
