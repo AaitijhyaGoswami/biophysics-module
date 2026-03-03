@@ -107,11 +107,13 @@ def app():
     tip_factor       = st.sidebar.slider("Tip Growth Factor (κ)", 0.5, 2.0,  1.0)
 
     st.sidebar.subheader("System Settings")
-    grid            = 300
-    num_seeds       = st.sidebar.slider("Number of Colonies", 1,  12,  12)
-    seed_intensity  = 0.03
-    steps_per_frame = st.sidebar.slider("Simulation Speed",   1,  100, 40)
-    target_fps      = st.sidebar.slider("Target FPS",         1,  30,  12)
+    grid              = 300
+    num_seeds         = st.sidebar.slider("Number of Colonies",    1,   12,  12)
+    seed_intensity    = 0.03
+    steps_per_frame   = st.sidebar.slider("Simulation Speed",      1,  100,  40)
+    target_fps        = st.sidebar.slider("Target FPS",            1,   30,  12)
+    surface_3d_every  = st.sidebar.slider("3D Update Every N Frames", 1, 30,  8)
+    charts_every      = st.sidebar.slider("Charts Update Every N Frames", 1, 60, 20)
 
     # ---------------- UTILS ----------------
     def laplacian(arr):
@@ -151,6 +153,7 @@ def app():
         st.session_state.bg_seed_ids       = s
         st.session_state.bg_mask           = m
         st.session_state.bg_time           = 0
+        st.session_state.bg_frame_count    = 0
         st.session_state.bg_hist_time      = []
         st.session_state.bg_pop_history    = []
         st.session_state.bg_nut_history    = []
@@ -164,6 +167,7 @@ def app():
         st.session_state.bg_seed_ids       = s
         st.session_state.bg_mask           = m
         st.session_state.bg_time           = 0
+        st.session_state.bg_frame_count    = 0
         st.session_state.bg_hist_time      = []
         st.session_state.bg_pop_history    = []
         st.session_state.bg_nut_history    = []
@@ -210,7 +214,10 @@ def app():
     ])
 
     # ---------------- RENDER HELPERS ----------------
-    def render_visuals(bacteria, food, seed_ids, mask, t):
+    SURF_STRIDE = 4  # Downsample 300→75 for 3D surface (16x fewer points)
+
+    def render_visuals(bacteria, food, seed_ids, mask, t, frame_count):
+        # ---- 2D colony (every frame) ----
         medium = np.zeros((grid, grid, 3))
         for sid in range(1, num_seeds + 1):
             sid_mask = seed_ids == sid
@@ -224,54 +231,61 @@ def app():
         if halo.max() > 0:
             halo /= halo.max()
         medium += halo[..., None] * 0.6
-        medium = np.clip(medium, 0, 1)
+        medium  = np.clip(medium, 0, 1)
         medium[~mask] = 0
+        ph_colony.image(medium, use_column_width=True)
 
+        # ---- nutrient + biomass images (every frame) ----
         nutr_img = np.zeros((grid, grid, 3))
         nutr_img[..., 1] = food
-        nutr_img[~mask] = 0
+        nutr_img[~mask]  = 0
+        ph_nutrient.image(nutr_img, use_column_width=True)
 
         bio_img = np.zeros((grid, grid, 3))
         bio_img[..., 0] = bacteria
         bio_img[..., 2] = bacteria * 0.5
-        bio_img[~mask] = 0
+        bio_img[~mask]  = 0
+        ph_biomass.image(bio_img, use_column_width=True)
 
-        z = gaussian_filter(bacteria, 1.5)
-        z = z / (z.max() + 1e-9) * 0.15
-        fig3d = go.Figure(data=[go.Surface(z=z, colorscale="Inferno")])
-        fig3d.update_layout(
-            title=f"3D Biomass Surface (t={t})",
-            margin=dict(l=0, r=0, b=0, t=30)
-        )
+        # ---- 3D surface: downsampled + throttled ----
+        if frame_count % surface_3d_every == 0:
+            b_small = gaussian_filter(bacteria, 1.5)[::SURF_STRIDE, ::SURF_STRIDE]
+            z = b_small / (b_small.max() + 1e-9) * 0.15
+            fig3d = go.Figure(data=[go.Surface(z=z, colorscale="Inferno", showscale=False)])
+            fig3d.update_layout(
+                title=f"3D Biomass Surface (t={t})",
+                margin=dict(l=0, r=0, b=0, t=30),
+                uirevision="static",  # preserves camera angle between updates
+            )
+            ph_3d.plotly_chart(fig3d, use_container_width=True)
 
-        ph_colony.image(medium,    use_column_width=True)
-        ph_3d.plotly_chart(fig3d,  use_container_width=True)
-        ph_nutrient.image(nutr_img, use_column_width=True)
-        ph_biomass.image(bio_img,  use_column_width=True)
-
-    def render_charts(hist_time, pop_history, nut_history, colony_history):
-        if not hist_time:
+    def render_charts(hist_time, pop_history, nut_history, colony_history, frame_count):
+        if not hist_time or frame_count % charts_every != 0:
             return
         df_global = pd.DataFrame({
-            "Time (mins)":   hist_time,
-            "Total Biomass": pop_history,
-            "Total Nutrient": nut_history
+            "Time (mins)":    hist_time,
+            "Total Biomass":  pop_history,
+            "Total Nutrient": nut_history,
         })
         df_melt = df_global.melt("Time (mins)", var_name="Metric", value_name="Value")
-        chart_global = alt.Chart(df_melt).mark_line().encode(
-            x="Time (mins)", y="Value", color="Metric",
-            tooltip=["Time (mins)", "Metric", "Value"]
-        ).interactive()
+        chart_global = (
+            alt.Chart(df_melt).mark_line()
+            .encode(x="Time (mins)", y="Value", color="Metric",
+                    tooltip=["Time (mins)", "Metric", "Value"])
+            .interactive()
+        )
         ph_global.altair_chart(chart_global, use_container_width=True)
 
         data = {"Time (mins)": hist_time}
         for sid in range(1, num_seeds + 1):
             data[f"Colony {sid}"] = colony_history[sid]
         df_col_melt = pd.DataFrame(data).melt("Time (mins)", var_name="Colony", value_name="Biomass")
-        chart_local = alt.Chart(df_col_melt).mark_line().encode(
-            x="Time (mins)", y="Biomass", color="Colony",
-            tooltip=["Time (mins)", "Colony", "Biomass"]
-        ).interactive()
+        chart_local = (
+            alt.Chart(df_col_melt).mark_line()
+            .encode(x="Time (mins)", y="Biomass", color="Colony",
+                    tooltip=["Time (mins)", "Colony", "Biomass"])
+            .interactive()
+        )
         ph_local.altair_chart(chart_local, use_container_width=True)
 
     # ---------------- INITIAL STATIC RENDER ----------------
@@ -280,13 +294,15 @@ def app():
         st.session_state.bg_food,
         st.session_state.bg_seed_ids,
         st.session_state.bg_mask,
-        st.session_state.bg_time
+        st.session_state.bg_time,
+        frame_count=0,  # force 3D + charts on initial load
     )
     render_charts(
         st.session_state.bg_hist_time,
         st.session_state.bg_pop_history,
         st.session_state.bg_nut_history,
-        st.session_state.bg_colony_history
+        st.session_state.bg_colony_history,
+        frame_count=0,
     )
 
     # ---------------- REAL-TIME SIMULATION LOOP ----------------
@@ -297,6 +313,7 @@ def app():
         seed_ids       = st.session_state.bg_seed_ids.copy()
         mask           = st.session_state.bg_mask
         t              = st.session_state.bg_time
+        frame_count    = st.session_state.bg_frame_count
         hist_time      = list(st.session_state.bg_hist_time)
         pop_history    = list(st.session_state.bg_pop_history)
         nut_history    = list(st.session_state.bg_nut_history)
@@ -339,29 +356,31 @@ def app():
                     seed_ids[(nbr_mask) & (seed_ids == 0) & (bacteria > 0)] = sid
 
             # ---- RECORD METRICS ----
-            t += steps_per_frame
+            t           += steps_per_frame
+            frame_count += 1
             hist_time.append(t)
             pop_history.append(float(np.sum(bacteria)))
             nut_history.append(float(np.sum(food)))
             for sid in range(1, num_seeds + 1):
                 colony_history[sid].append(float(np.sum(bacteria[seed_ids == sid])))
 
-            # ---- RENDER IN-PLACE ----
-            render_visuals(bacteria, food, seed_ids, mask, t)
-            render_charts(hist_time, pop_history, nut_history, colony_history)
+            # ---- RENDER IN-PLACE (throttled) ----
+            render_visuals(bacteria, food, seed_ids, mask, t, frame_count)
+            render_charts(hist_time, pop_history, nut_history, colony_history, frame_count)
 
-            # ---- WRITE BACK STATE (so reset / re-open is consistent) ----
+            # ---- WRITE BACK STATE ----
             st.session_state.bg_bacteria       = bacteria.copy()
             st.session_state.bg_food           = food.copy()
             st.session_state.bg_seed_ids       = seed_ids.copy()
             st.session_state.bg_time           = t
+            st.session_state.bg_frame_count    = frame_count
             st.session_state.bg_hist_time      = hist_time
             st.session_state.bg_pop_history    = pop_history
             st.session_state.bg_nut_history    = nut_history
             st.session_state.bg_colony_history = colony_history
 
             # ---- FPS THROTTLE ----
-            elapsed = time.perf_counter() - frame_start
+            elapsed   = time.perf_counter() - frame_start
             sleep_for = frame_duration - elapsed
             if sleep_for > 0:
                 time.sleep(sleep_for)
