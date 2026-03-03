@@ -182,6 +182,8 @@ def app():
 
     run_sim = st.toggle("Run Simulation", value=False)
 
+    st.markdown("**Species Legend:** 🔴 Superbug | 🟢 Mutated | 🔵 Wildtype")
+
     # ---------------- Simulation ----------------
     if run_sim:
         bacteria_grid = st.session_state.mp_grid
