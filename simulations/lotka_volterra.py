@@ -229,16 +229,6 @@ def app():
                 use_container_width=True
             )
 
-    # ---------------- STATIC RENDER WHEN PAUSED ----------------
-    render(
-        st.session_state.p,
-        st.session_state.q,
-        st.session_state.n,
-        st.session_state.mask,
-        st.session_state.t,
-        frame=0,
-    )
-
     # ---------------- LIVE SIMULATION LOOP ----------------
     if running:
         P    = st.session_state.p.copy()
@@ -307,6 +297,16 @@ def app():
             wait    = (1 / 20) - elapsed
             if wait > 0:
                 time.sleep(wait)
+
+    else:
+        render(
+            st.session_state.p,
+            st.session_state.q,
+            st.session_state.n,
+            st.session_state.mask,
+            st.session_state.t,
+            frame=0,
+        )
 
 if __name__ == "__main__":
     app()
