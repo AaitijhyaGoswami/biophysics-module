@@ -73,7 +73,7 @@ def app():
     = \beta \;\; \text{if } S(x',y',t) \succ S(x,y,t)
     """)
 
-    st.markdown("## Static Run Video")
+    st.markdown("## Local Run Video")
     st.video("https://youtu.be/KJjx3NG-ol0")
 
     # ---------------- SIDEBAR ----------------
