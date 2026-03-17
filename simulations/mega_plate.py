@@ -114,7 +114,7 @@ def app():
     \end{aligned}
     """)
 
-    st.markdown("## Static Run Video")
+    st.markdown("## Local Run Video")
     st.video("https://youtu.be/-jjPcGoqk-8")
 
     # ---------------- Sidebar ----------------
