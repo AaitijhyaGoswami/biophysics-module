@@ -108,10 +108,9 @@ biophysics-module/
 ├── app.py                        # Entry point for the Streamlit app
 ├── localruns/
 │   ├── growth-sim.py             # Module 1: Multi-Colony Competition
-│   ├── lv-sim.py         # Module 2: Predator-Prey
-│   ├── mega_plate.py             # Module 3: Evolutionary Rescue
-│   ├── rps_sim.py                # Module 4: Cyclic Dominance
-│   └── cross_feeding.py          # Module 5: Cross-Feeding
+│   ├── lv-sim.py                 # Module 2: Predator-Prey
+│   ├── mega-plate.py             # Module 3: Evolutionary Rescue
+│   ├── rps-sim.py                # Module 4: Cyclic Dominance
 ├── simulations/
 │   ├── growth_sim.py             # Module 1: Multi-Colony Competition
 │   ├── lotka_volterra.py         # Module 2: Predator-Prey
