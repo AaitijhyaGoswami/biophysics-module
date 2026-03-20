@@ -1,8 +1,6 @@
 import streamlit as st
 
-# -------------------------------------------------------------------------
 # PAGE CONFIGURATION
-# -------------------------------------------------------------------------
 st.set_page_config(
     page_title="Biophysics Suite",
     page_icon="🧫",
@@ -10,9 +8,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# -------------------------------------------------------------------------
 # MODULE IMPORTS
-# -------------------------------------------------------------------------
 modules = {}
 
 try:
@@ -45,9 +41,8 @@ try:
 except ImportError:
     pass
 
-# -------------------------------------------------------------------------
 # SIDEBAR NAVIGATION
-# -------------------------------------------------------------------------
+
 st.sidebar.title("Biophysics Suite")
 
 options = ["Home"] + list(modules.keys())
@@ -60,9 +55,7 @@ st.sidebar.info(
     "**Ritaja Dutta**\n*Theoretical Framework*"
 )
 
-# -------------------------------------------------------------------------
 # MAIN ROUTING
-# -------------------------------------------------------------------------
 if page == "Home":
     st.title("Computational Biophysics Simulation Suite")
     st.markdown("### Stochastic & Deterministic Modeling of Biological Dynamics")
