@@ -138,9 +138,3 @@ Contributions are welcome! Please open an issue or submit a pull request if you 
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
----
-
-<p align="center">
-  Built with ❤️ for Physics and Biology
-</p>
-
