@@ -10,7 +10,7 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 This project is an interactive **Computational Ecology Dashboard** developed to visualize complex biological systems through the lens of statistical physics and differential equations. 
 
@@ -20,7 +20,7 @@ The simulation suite runs on **Streamlit**, leveraging **NumPy** for high-perfor
 
 ---
 
-## 🚀 Key Modules
+## Key Modules
 
 ### 1. Multi-Colony Competition
 **Bio-Physical Concept:** Resource Depletion & Growth Phases  
