@@ -57,12 +57,11 @@ st.sidebar.info(
 
 # MAIN ROUTING
 if page == "Home":
-    st.title("Computational Biophysics Simulation Suite")
+    st.title("🧬 Computational Biophysics Simulation Suite")
     st.markdown("### Stochastic & Deterministic Modeling of Biological Dynamics")
-    st.markdown("---")
 
     st.markdown("""
-    #### Welcome
+    #### 👋 Welcome
 
     This interactive dashboard facilitates the simulation of various biological processes inspired by 
     statistical physics and ecological modeling. The tools and visualizations aim to provide insight into
@@ -73,7 +72,6 @@ if page == "Home":
     st.info("**Click on the hyperlinks below to learn more!**")
 
     st.markdown("## The Modules")
-    st.markdown("---")
 
     # 1. Bacterial Growth
     st.markdown("""
