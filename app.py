@@ -71,11 +71,11 @@ if page == "Home":
 
     st.info("**Click on the hyperlinks below to learn more!**")
 
-    st.markdown("## The Modules")
+    st.header("The Modules")
 
     # 1. Bacterial Growth
     st.markdown("""
-    ### **1. [Bacterial Growth Model](https://en.wikipedia.org/wiki/Bacterial_growth)**
+    ### **[Bacterial Growth Model](https://en.wikipedia.org/wiki/Bacterial_growth)**
     - **Abstract:** This model simulates reaction-diffusion systems with stochastic noise, showing bacterial colony growth and the interplay between nutrient availability and diffusion-limited aggregation. The results highlight phenomena such as branching and dendritic growth patterns.
     - **Applications:** - Modeling biofilm architecture and metabolic gradients.  
         - Studying chemotaxis and nutrient-seeking behaviors in heterogeneous environments.  
@@ -85,7 +85,7 @@ if page == "Home":
 
     # 2. Lotka-Volterra
     st.markdown("""
-    ### **2. [Lotka-Volterra Ecosystem Dynamics](https://en.wikipedia.org/wiki/Lotka%E2%80%93Volterra_equations)**
+    ### **[Lotka-Volterra Ecosystem Dynamics](https://en.wikipedia.org/wiki/Lotka%E2%80%93Volterra_equations)**
     - **Abstract:** The Lotka-Volterra model uses coupled differential equations to represent predator-prey 
       interactions on a spatial grid. These simulations go beyond traditional ODEs to incorporate 
       spatial effects, revealing complex phase-space dynamics and oscillatory behaviors.
@@ -97,7 +97,7 @@ if page == "Home":
 
     # 3. MEGA Plate Evolution
     st.markdown("""
-    ### **3. [MEGA Plate Evolution](https://www.biorxiv.org/content/10.1101/2021.12.23.474071v1.full)**
+    ### **[MEGA Plate Evolution](https://www.biorxiv.org/content/10.1101/2021.12.23.474071v1.full)**
     - **Abstract:** Based on the Microbial Evolution and Growth Arena (MEGA) plate experiment, this model captures 
       antibiotic resistance evolution under spatially distributed drug gradients. Spatial dynamics, stochastic
       mutation rates, and stepwise resistance development are simulated to illustrate how bacteria adapt 
@@ -111,7 +111,7 @@ if page == "Home":
 
     # 4. Cyclic Dominance
     st.markdown("""
-    ### **4. [Cyclic Dominance](https://en.wikipedia.org/wiki/Cyclic_succession)**
+    ### **[Cyclic Dominance](https://en.wikipedia.org/wiki/Cyclic_succession)**
     - **Abstract:** This module captures non-transitive interactions (e.g., A beats B, B beats C, C beats A),
       typical of ecosystems characterized by cyclic dominance. The model uses stochastic spatial lattice 
       updates to reveal the emergence of spiral waves and the preservation of biodiversity via non-transitive
@@ -124,7 +124,7 @@ if page == "Home":
 
     # 5. Cross-Feeding (Syntrophy)
     st.markdown("""
-    ### **5. [Syntrophy](https://en.wikipedia.org/wiki/Syntrophy)**
+    ### **[Syntrophy](https://en.wikipedia.org/wiki/Syntrophy)**
     - **Abstract:** Cross-feeding, or metabolic interdependence, is a phenomenon where one organism produces a 
       resource that another consumes. This simulation illustrates spatiotemporal dynamics of producers (A) 
       secreting a nutrient (X), and consumers (B) that consume X while producing a toxin (Y) that affects A. The 
