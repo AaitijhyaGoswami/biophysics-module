@@ -77,6 +77,7 @@ def app():
     st.video("https://youtu.be/KJjx3NG-ol0")
 
     # ---------------- SIDEBAR ----------------
+    st.sidebar.markdown("---")
     st.sidebar.subheader("Ecosystem Parameters")
     spread_rate = st.sidebar.slider("Reproduction Rate (σ)", 0.0, 1.0, 0.25)
     eat_prob = st.sidebar.slider("Interaction Probability (β)", 0.0, 1.0, 0.45)
