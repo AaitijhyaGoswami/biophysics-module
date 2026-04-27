@@ -118,6 +118,7 @@ def app():
     st.video("https://youtu.be/-jjPcGoqk-8")
 
     # ---------------- Sidebar ----------------
+    st.sidebar.markdown("---")
     st.sidebar.subheader("Evolution Parameters")
     NU = st.sidebar.slider("Mutation Rate (ν)", 0.0, 0.1, 0.01)
     P = st.sidebar.slider("Growth Prob (p)", 0.0, 1.0, 0.2)
