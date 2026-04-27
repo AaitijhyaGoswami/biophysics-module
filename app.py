@@ -51,8 +51,8 @@ page = st.sidebar.radio("Select Simulation:", options)
 st.sidebar.markdown("---")
 st.sidebar.caption("Project Team:")
 st.sidebar.info(
-    "**Aaitijhya Goswami**\n*Simulation & Modeling*\n\n"
-    "**Ritaja Dutta**\n*Theoretical Framework*"
+    "**Aaitijhya Goswami**  \n"
+    "**Ritaja Dutta**\n\n*Indian Institute of Science, Bengaluru*"
 )
 
 # MAIN ROUTING
