@@ -65,7 +65,8 @@ def app():
     st.video("https://youtu.be/f6vUCx-SFOI")
 
     # ---------------- SIDEBAR ----------------
-    st.sidebar.subheader("Physics Parameters")
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("PDE Parameters")
     food_diff        = st.sidebar.slider("Food Diffusion",        0.0, 0.02, 0.008, format="%.4f")
     bact_diff        = st.sidebar.slider("Bacteria Diffusion",    0.0, 0.05, 0.02,  format="%.4f")
     growth_rate      = st.sidebar.slider("Growth Rate",           0.0, 0.1,  0.05,  format="%.4f")
