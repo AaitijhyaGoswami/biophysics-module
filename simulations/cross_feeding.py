@@ -83,6 +83,7 @@ def app():
     
 
     # ---------------- SIDEBAR ----------------
+    st.sidebar.markdown("---")
     st.sidebar.subheader("Ecosystem Parameters")
     D = st.sidebar.slider("Diffusion Coefficient (D)", 0.01, 0.5, 0.15, step=0.01)
     decay_x = st.sidebar.slider("Decay Rate of X (δ_X)", 0.01, 0.1, 0.05, step=0.01)
