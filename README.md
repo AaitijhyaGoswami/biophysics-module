@@ -1,4 +1,4 @@
-# 🧬 Computational Biophysics Simulation Suite
+# Computational Biophysics Simulation Suite
 ### Reaction-Diffusion & Spatial Dynamics Simulations
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
@@ -6,7 +6,7 @@
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-Active-success)
 
-> **Authors:** [Aaitijhya Goswami](https://www.linkedin.com/in/aaitijhya-goswami-553940280/) & [Ritaja Dutta](https://www.linkedin.com/in/ritaja-d-58ba3a367/)
+> **Authors:** [Aaitijhya Goswami](https://www.linkedin.com/in/aaitijhya-goswami-553940280/) & [Ritaja Dutta](https://www.linkedin.com/in/ritaja-d-58ba3a367/) (IISc Bengaluru)
 
 ---
 
@@ -71,7 +71,7 @@ This creates complex "chasing" patterns where partners must stay close to feed b
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Language:** Python 3.9+
 * **Core Logic:** `NumPy` (Vectorized Finite Difference Method, Monte Carlo steps)
@@ -80,7 +80,7 @@ This creates complex "chasing" patterns where partners must stay close to feed b
 
 ---
 
-## 💻 Installation & Usage
+## Installation & Usage
 
 1.  **Clone the repository:**
     ```bash
@@ -100,7 +100,7 @@ This creates complex "chasing" patterns where partners must stay close to feed b
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 biophysics-module/
@@ -122,7 +122,7 @@ biophysics-module/
 ```
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request if you have ideas for new biological models or optimization improvements.
 
@@ -134,7 +134,7 @@ Contributions are welcome! Please open an issue or submit a pull request if you 
 
 ---
 
-## 📜 License
+## License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
