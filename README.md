@@ -106,11 +106,11 @@ This creates complex "chasing" patterns where partners must stay close to feed b
 biophysics-module/
 ├──.devcontainer                  # config directory
 ├── app.py                        # Entry point for the Streamlit app
-├── localruns/
-│   ├── growth-sim.py             # Module 1: Multi-Colony Competition
-│   ├── lv-sim.py                 # Module 2: Predator-Prey
-│   ├── mega-plate.py             # Module 3: Evolutionary Rescue
-│   ├── rps-sim.py                # Module 4: Cyclic Dominance
+├── localruns/                    # local simulation run codes
+│   ├── growth-sim.py             # Local run of multi-colony competition model
+│   ├── lv-sim.py                 # Local run of predator-prey model
+│   ├── mega-plate.py             # Local run of evolutionary rescue model
+│   ├── rps-sim.py                # Local run of cyclic dominance model
 ├── simulations/
 │   ├── growth_sim.py             # Module 1: Multi-Colony Competition
 │   ├── lotka_volterra.py         # Module 2: Predator-Prey
