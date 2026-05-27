@@ -338,7 +338,11 @@ def app():
             "Consumers (B)": st.session_state.hist_B,
         }).melt("Time", var_name="Species", value_name="Population")
         chart = alt.Chart(df).mark_line().encode(
-            x="Time", y="Population", color="Species"
+            x="Time", y="Population",
+            color=alt.Color("Species", scale=alt.Scale(
+                domain=["Producers (A)", "Consumers (B)"],
+                range=["#FF4444", "#44BB44"]),
+                legend=alt.Legend(title="Species")),
         )
         ph_chart.altair_chart(chart, use_container_width=True)
 
@@ -370,7 +374,8 @@ def app():
             "Entropy": st.session_state.hist_shannon,
         })
         shannon_chart = alt.Chart(df_shannon).mark_line(color="#9467bd").encode(
-            x="Time", y=alt.Y("Entropy", title="Shannon Entropy (nats)"),
+            x="Time",
+            y=alt.Y("Entropy", title="Shannon Entropy (nats)"),
         )
         ph_shannon.altair_chart(shannon_chart, use_container_width=True)
 
@@ -408,7 +413,7 @@ def app():
     grad_img[..., 0] = grad_Y / (grad_Y.max() + 1e-9)   # red = toxin gradient
     grad_img[..., 2] = grad_X / (grad_X.max() + 1e-9)   # blue = nutrient gradient
     ph_grad.image(grad_img, clamp=True, use_column_width=True,
-                  caption="Red = |∇Y| (toxin front)  |  Blue = |∇X| (nutrient front)")
+                  caption="🔴 Red = |∇Y| toxin diffusion front   🔵 Blue = |∇X| nutrient diffusion front")
 
     # Fig. 9 — Species interface map (cells of A neighbouring B and vice versa)
     def has_neighbour(g, state):
@@ -422,7 +427,7 @@ def app():
     iface_img[interface_AB] = [1.0, 0.8, 0.0]   # gold = A at interface
     iface_img[interface_BA] = [0.0, 0.8, 1.0]   # cyan = B at interface
     ph_interface.image(iface_img, clamp=True, use_column_width=True,
-                       caption="Gold = A cells at contact zone  |  Cyan = B cells at contact zone")
+                       caption="🟡 Gold = Producer A at contact zone   🩵 Cyan = Consumer B at contact zone")
 
     # Fig. 10 — Spatial clustering index (Moran's I proxy via autocorrelation)
     if st.session_state.hist_time:
@@ -450,8 +455,8 @@ def app():
             y=alt.Y("Clustering Index (Moran's I)", scale=alt.Scale(domain=[-1, 1])),
             color=alt.Color("Species", scale=alt.Scale(
                 domain=["Producers (A)", "Consumers (B)"],
-                range=["#FF4444", "#44FF44"]
-            )),
+                range=["#FF4444", "#44FF44"]),
+                legend=alt.Legend(title="Species")),
         )
         ph_cluster.altair_chart(cluster_chart, use_container_width=True)
 
