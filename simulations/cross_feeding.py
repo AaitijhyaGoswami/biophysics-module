@@ -210,6 +210,10 @@ def app():
     if not st.session_state.initialized:
         reset()
 
+    # backfill keys added after initial deployment
+    if "hist_shannon" not in st.session_state:
+        st.session_state.hist_shannon = []
+
     if st.sidebar.button("Reset Simulation"):
         reset(); st.rerun()
 
@@ -344,12 +348,21 @@ def app():
             "Consumers (B)": st.session_state.hist_B,
             "Time":          st.session_state.hist_time,
         })
-        phase_chart = alt.Chart(df_phase).mark_line(opacity=0.8).encode(
-            x=alt.X("Producers (A)", title="Producers (A)"),
-            y=alt.Y("Consumers (B)", title="Consumers (B)"),
-            color=alt.Color("Time", scale=alt.Scale(scheme="viridis"), legend=alt.Legend(title="Time")),
+        phase_line = alt.Chart(df_phase).mark_line(
+            color="#aaaaaa", opacity=0.4, strokeWidth=1
+        ).encode(
+            x=alt.X("Producers (A):Q", title="Producers (A)"),
+            y=alt.Y("Consumers (B):Q", title="Consumers (B)"),
         )
-        ph_phase.altair_chart(phase_chart, use_container_width=True)
+        phase_dots = alt.Chart(df_phase).mark_circle(size=20).encode(
+            x=alt.X("Producers (A):Q"),
+            y=alt.Y("Consumers (B):Q"),
+            color=alt.Color("Time:Q", scale=alt.Scale(scheme="viridis"),
+                            legend=alt.Legend(title="Time")),
+            tooltip=["Time", "Producers (A)", "Consumers (B)"],
+        )
+        ph_phase.altair_chart((phase_line + phase_dots).interactive(),
+                              use_container_width=True)
 
         # Fig. 7 — Shannon entropy
         df_shannon = pd.DataFrame({
