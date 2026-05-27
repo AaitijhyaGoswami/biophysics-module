@@ -337,16 +337,10 @@ def app():
             "Producers (A)": st.session_state.hist_A,
             "Consumers (B)": st.session_state.hist_B,
         }).melt("Time", var_name="Species", value_name="Population")
-        chart = alt.Chart(df).mark_line(strokeWidth=2).encode(
-            x=alt.X("Time:Q", title="Time (steps)"),
-            y=alt.Y("Population:Q", title="Cell Count"),
-            color=alt.Color("Species:N", title="Species",
-                scale=alt.Scale(domain=["Producers (A)", "Consumers (B)"],
-                                range=["#FF4444", "#44BB44"]),
-                legend=alt.Legend(title="Species", orient="top-right")),
-            tooltip=["Time:Q", "Species:N", "Population:Q"],
-        ).properties(title="Population over time")
-        ph_chart.altair_chart(chart.interactive(), use_container_width=True)
+        chart = alt.Chart(df).mark_line().encode(
+            x="Time", y="Population", color="Species"
+        )
+        ph_chart.altair_chart(chart, use_container_width=True)
 
         # Fig. 6 — Phase portrait
         df_phase = pd.DataFrame({
@@ -375,19 +369,10 @@ def app():
             "Time":    st.session_state.hist_time,
             "Entropy": st.session_state.hist_shannon,
         })
-        shannon_rule = alt.Chart(pd.DataFrame({"y": [float(-(1/3*__import__("math").log(1/3))*3)]})).mark_rule(
-            strokeDash=[4, 4], color="#cccccc", opacity=0.6
-        ).encode(y=alt.Y("y:Q"))
-        shannon_chart = alt.Chart(df_shannon).mark_line(
-            color="#9467bd", strokeWidth=2
-        ).encode(
-            x=alt.X("Time:Q", title="Time (steps)"),
-            y=alt.Y("Entropy:Q", title="Shannon Entropy (nats)",
-                    scale=alt.Scale(domain=[0, 1.1])),
-            tooltip=["Time:Q", "Entropy:Q"],
-        ).properties(title="Coexistence index — max = 1.099 (equal thirds)")
-        ph_shannon.altair_chart((shannon_chart + shannon_rule).interactive(),
-                                use_container_width=True)
+        shannon_chart = alt.Chart(df_shannon).mark_line(color="#9467bd").encode(
+            x="Time", y=alt.Y("Entropy", title="Shannon Entropy (nats)"),
+        )
+        ph_shannon.altair_chart(shannon_chart, use_container_width=True)
 
     # 3D surface (Plotly) — downsampled for performance
     stride = max(1, GRID // 50)
@@ -399,24 +384,16 @@ def app():
         subplot_titles=["Producers (A)", "Consumers (B)", "Nutrient (X)"],
         horizontal_spacing=0.02,
     )
-    for col, (data, cmap, cbar_title) in enumerate(
-        [(A_dens[::stride, ::stride], "Reds",   "Density"),
-         (B_dens[::stride, ::stride], "Greens", "Density"),
-         (X[::stride, ::stride],      "Blues",  "Conc.")], 1
+    for col, (data, cmap) in enumerate(
+        [(A_dens[::stride, ::stride], "Reds"),
+         (B_dens[::stride, ::stride], "Greens"),
+         (X[::stride, ::stride],      "Blues")], 1
     ):
-        fig3d.add_trace(go.Surface(
-            z=data, colorscale=cmap, opacity=0.88,
-            showscale=True,
-            colorbar=dict(title=cbar_title, thickness=12, len=0.6,
-                          x=0.0 + (col - 1) * 0.345),
-        ), row=1, col=col)
+        fig3d.add_trace(go.Surface(z=data, colorscale=cmap, showscale=False, opacity=0.88), row=1, col=col)
     fig3d.update_layout(
-        margin=dict(l=0, r=0, t=40, b=0),
-        height=340,
+        margin=dict(l=0, r=0, t=30, b=0),
+        height=320,
         paper_bgcolor="rgba(0,0,0,0)",
-        scene=dict(zaxis_title="Density", xaxis_title="x", yaxis_title="y"),
-        scene2=dict(zaxis_title="Density", xaxis_title="x", yaxis_title="y"),
-        scene3=dict(zaxis_title="Conc.", xaxis_title="x", yaxis_title="y"),
     )
     ph_3d.plotly_chart(fig3d, use_container_width=True)
 
@@ -430,23 +407,8 @@ def app():
     grad_img = np.zeros((GRID, GRID, 3))
     grad_img[..., 0] = grad_Y / (grad_Y.max() + 1e-9)   # red = toxin gradient
     grad_img[..., 2] = grad_X / (grad_X.max() + 1e-9)   # blue = nutrient gradient
-    fig_grad = go.Figure()
-    fig_grad.add_trace(go.Heatmap(
-        z=grad_Y, colorscale="Reds", showscale=True, opacity=0.85,
-        colorbar=dict(title="|∇Y| Toxin", x=0.45, thickness=12, len=0.8),
-        name="|∇Y| Toxin front",
-    ))
-    fig_grad.add_trace(go.Heatmap(
-        z=grad_X, colorscale="Blues", showscale=True, opacity=0.6,
-        colorbar=dict(title="|∇X| Nutrient", x=1.0, thickness=12, len=0.8),
-        name="|∇X| Nutrient front",
-    ))
-    fig_grad.update_layout(
-        margin=dict(l=0, r=80, t=10, b=0), height=260,
-        paper_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(title="x (grid)"), yaxis=dict(title="y (grid)"),
-    )
-    ph_grad.plotly_chart(fig_grad, use_container_width=True)
+    ph_grad.image(grad_img, clamp=True, use_column_width=True,
+                  caption="Red = |∇Y| (toxin front)  |  Blue = |∇X| (nutrient front)")
 
     # Fig. 9 — Species interface map (cells of A neighbouring B and vice versa)
     def has_neighbour(g, state):
@@ -456,27 +418,11 @@ def app():
         )
     interface_AB = (grid == A) & has_neighbour(grid, B)   # A cells touching B
     interface_BA = (grid == B) & has_neighbour(grid, A)   # B cells touching A
-    iface_grid = np.zeros((GRID, GRID))
-    iface_grid[interface_AB] = 1.0   # A at interface
-    iface_grid[interface_BA] = 2.0   # B at interface
-    fig_iface = go.Figure(go.Heatmap(
-        z=iface_grid,
-        colorscale=[[0.0, "rgb(20,20,20)"], [0.5, "rgb(255,204,0)"], [1.0, "rgb(0,204,255)"]],
-        zmin=0, zmax=2,
-        showscale=True,
-        colorbar=dict(
-            title="Interface",
-            tickvals=[0.33, 1.0, 1.67],
-            ticktext=["Empty", "Producer A", "Consumer B"],
-            thickness=14,
-        ),
-    ))
-    fig_iface.update_layout(
-        margin=dict(l=0, r=0, t=10, b=0), height=260,
-        paper_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(title="x (grid)"), yaxis=dict(title="y (grid)"),
-    )
-    ph_interface.plotly_chart(fig_iface, use_container_width=True)
+    iface_img = np.zeros((GRID, GRID, 3))
+    iface_img[interface_AB] = [1.0, 0.8, 0.0]   # gold = A at interface
+    iface_img[interface_BA] = [0.0, 0.8, 1.0]   # cyan = B at interface
+    ph_interface.image(iface_img, clamp=True, use_column_width=True,
+                       caption="Gold = A cells at contact zone  |  Cyan = B cells at contact zone")
 
     # Fig. 10 — Spatial clustering index (Moran's I proxy via autocorrelation)
     if st.session_state.hist_time:
@@ -499,22 +445,15 @@ def app():
             "Species": ["Producers (A)", "Consumers (B)"],
             "Clustering Index (Moran's I)": [ci_A, ci_B],
         })
-        zero_rule = alt.Chart(pd.DataFrame({"y": [0]})).mark_rule(
-            color="#888888", strokeDash=[4, 4]
-        ).encode(y="y:Q")
-        cluster_chart = alt.Chart(df_cluster).mark_bar(opacity=0.85).encode(
-            x=alt.X("Species:N", axis=alt.Axis(labelAngle=0), title=None),
-            y=alt.Y("Clustering Index (Moran's I):Q",
-                    scale=alt.Scale(domain=[-1, 1]),
-                    title="Moran's I  (−1 dispersed → +1 clustered)"),
-            color=alt.Color("Species:N", title="Species",
-                scale=alt.Scale(domain=["Producers (A)", "Consumers (B)"],
-                                range=["#FF4444", "#44FF44"]),
-                legend=alt.Legend(title="Species", orient="top-right")),
-            tooltip=["Species:N", alt.Tooltip("Clustering Index (Moran's I):Q", format=".4f")],
-        ).properties(title="Spatial clustering — positive = patches forming")
-        ph_cluster.altair_chart((cluster_chart + zero_rule).interactive(),
-                                use_container_width=True)
+        cluster_chart = alt.Chart(df_cluster).mark_bar().encode(
+            x=alt.X("Species", axis=alt.Axis(labelAngle=0)),
+            y=alt.Y("Clustering Index (Moran's I)", scale=alt.Scale(domain=[-1, 1])),
+            color=alt.Color("Species", scale=alt.Scale(
+                domain=["Producers (A)", "Consumers (B)"],
+                range=["#FF4444", "#44FF44"]
+            )),
+        )
+        ph_cluster.altair_chart(cluster_chart, use_container_width=True)
 
     # ---------------- Analytical Steady States (SymPy) ----------------
     st.markdown("---")
