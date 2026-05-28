@@ -1,6 +1,5 @@
 import matplotlib
-matplotlib.use('TkAgg')  # Force GUI backend for Windows
-
+matplotlib.use('TkAgg') 
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
